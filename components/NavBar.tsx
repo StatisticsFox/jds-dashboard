@@ -16,7 +16,7 @@ export async function NavBar() {
           <Mascot size={32} />
           <span className="font-cute text-lg">새빛 대시보드</span>
         </Link>
-        {user && <NavLinks />}
+        {user && <NavLinks admin={user.admin} />}
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           {user && (

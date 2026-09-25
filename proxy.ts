@@ -7,7 +7,10 @@ export function proxy(request: NextRequest) {
   if (!request.cookies.has(SESSION_COOKIE)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  return NextResponse.next();
+  // 접속 기록용: 지금 주소를 서버 컴포넌트에서 읽을 수 있게 요청 헤더로 넘김
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {

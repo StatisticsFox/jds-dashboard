@@ -1,7 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { logEvent } from "@/lib/access-log";
 import { findAllowedPerson, normalizeEmail } from "@/lib/allowlist";
+import { getCurrentUser } from "@/lib/dal";
 import { sendLoginCode } from "@/lib/mailer";
 import { allow } from "@/lib/rate-limit";
 import {
@@ -29,6 +31,8 @@ async function requestCode(_prev: LoginState, formData: FormData): Promise<Login
 
   const code = generateCode();
   const person = await findAllowedPerson(email);
+  // 기록에는 등록 여부를 남기지만, 화면에는 똑같은 안내를 보여줌
+  await logEvent({ email, name: person?.name, action: person ? "코드 요청" : "코드 요청(미등록)", path: "/login" });
   if (person) {
     try {
       await sendLoginCode(email, code);
@@ -57,12 +61,15 @@ async function verifyCode(_prev: LoginState, formData: FormData): Promise<LoginS
   }
 
   const email = await checkPendingCode(String(formData.get("code") ?? ""));
-  if (!email || !(await findAllowedPerson(email))) {
+  const person = email ? await findAllowedPerson(email) : null;
+  if (!email || !person) {
+    await logEvent({ email: pendingEmail, action: "로그인 실패", path: "/login" });
     return { step: "code", email: pendingEmail, error: "코드가 맞지 않아요. 메일에 온 8자리 코드를 확인해 주세요." };
   }
 
   await clearPendingLogin();
   await createSession(email);
+  await logEvent({ email, name: person.name, action: "로그인", path: "/login" });
   redirect("/");
 }
 
@@ -85,6 +92,8 @@ export async function loginStep(prev: LoginState, formData: FormData): Promise<L
 }
 
 export async function logout() {
+  const user = await getCurrentUser();
+  if (user) await logEvent({ email: user.email, name: user.name, action: "로그아웃" });
   await deleteSession();
   redirect("/login");
 }
