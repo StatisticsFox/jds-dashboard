@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f5f5f4;
+  --foreground: #0b0b0b;
+  --surface: #fcfcfb;
+  --muted: #52514e;
+  --border: #e4e3df;
+  --grid: #ecebe7;
+  --series-1: #2a78d6;
+  --good: #0ca30c;
+  --bad: #d03b3b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-grid: var(--grid);
+  --color-series-1: var(--series-1);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* 다크 모드: 사용자가 직접 고르면 <html data-theme="dark|light">, 안 고르면 기기 설정을 따름 */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #0f0f0e;
+    --foreground: #ffffff;
+    --surface: #1a1a19;
+    --muted: #c3c2b7;
+    --border: #2e2e2c;
+    --grid: #262624;
+    --series-1: #3987e5;
+    --good: #2fb82f;
+    --bad: #e66767;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f0f0e;
+  --foreground: #ffffff;
+  --surface: #1a1a19;
+  --muted: #c3c2b7;
+  --border: #2e2e2c;
+  --grid: #262624;
+  --series-1: #3987e5;
+  --good: #2fb82f;
+  --bad: #e66767;
+}
+
+/* 테마 버튼 아이콘: 밝을 때는 달, 어두울 때는 해 */
+.theme-icon-sun {
+  display: none;
+}
+:root[data-theme="dark"] .theme-icon-sun {
+  display: inline;
+}
+:root[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun {
+    display: inline;
+  }
+  :root:not([data-theme="light"]) .theme-icon-moon {
+    display: none;
+  }
+}
+
+/* 캡처할 때만 보이는 설명 줄 */
+.capture-only {
+  display: none;
+}
+[data-capturing] .capture-only {
+  display: block;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
