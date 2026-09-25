@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { logEvent } from "@/lib/access-log";
 import { findAllowedPerson, normalizeEmail } from "@/lib/allowlist";
 import { getCurrentUser } from "@/lib/dal";
@@ -20,7 +20,17 @@ export type LoginState = { step: "email" | "code"; email?: string; message?: str
 
 // 1단계: 이메일 입력 → 허용된 사람이면 코드 발송
 // 허용 여부와 관계없이 같은 안내를 보여줘서, 명단에 누가 있는지 알아낼 수 없게 함
-async function requestCode(_prev: LoginState, formData: FormData): Promise<LoginState> {
+async function requestCode(prev: LoginState, formData: FormData): Promise<LoginState> {
+  try {
+    return await sendCodeStep(formData);
+  } catch (error) {
+    // 설정 문제(환경변수·시트 권한 등)로 실패해도 흰 오류 화면 대신 안내를 보여줌. 원인은 서버 로그에
+    console.error("[로그인] 코드 요청 처리 실패:", error);
+    return { step: "email", email: prev.email, error: "지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요." };
+  }
+}
+
+async function sendCodeStep(formData: FormData): Promise<LoginState> {
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { step: "email", email, error: "이메일 주소를 확인해 주세요." };
@@ -48,7 +58,18 @@ async function requestCode(_prev: LoginState, formData: FormData): Promise<Login
 }
 
 // 2단계: 코드 확인 → 맞으면 로그인
-async function verifyCode(_prev: LoginState, formData: FormData): Promise<LoginState> {
+async function verifyCode(prev: LoginState, formData: FormData): Promise<LoginState> {
+  try {
+    return await verifyCodeStep(formData);
+  } catch (error) {
+    // 로그인 성공 후 이동(redirect)은 오류가 아니므로 그대로 넘김
+    unstable_rethrow(error);
+    console.error("[로그인] 코드 확인 처리 실패:", error);
+    return { step: "code", email: prev.email, error: "지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요." };
+  }
+}
+
+async function verifyCodeStep(formData: FormData): Promise<LoginState> {
   const pendingEmail = await getPendingEmail();
   if (!pendingEmail) {
     return { step: "email", error: "코드 입력 시간이 지났어요. 코드를 다시 받아 주세요." };

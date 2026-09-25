@@ -6,9 +6,19 @@ const REVALIDATE_SECONDS = 300;
 
 export type Cell = string | number | boolean | undefined;
 
+// 비공개 키는 환경변수에 어떤 모양으로 넣어도 읽히게 정리:
+// 앞뒤 공백·따옴표 제거, 글자 그대로의 "\n"은 실제 줄바꿈으로 (Vercel 등에 붙여 넣을 때 흔한 차이)
+function normalizeKey(raw: string | undefined) {
+  return raw
+    ?.trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\+n/g, "\n") // "\n" 또는 "\\n" → 줄바꿈
+    .replace(/\r/g, "");
+}
+
 const credentials = {
-  email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-  key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim(),
+  key: normalizeKey(process.env.GOOGLE_PRIVATE_KEY),
 };
 // 데이터 시트는 읽기 전용 권한으로만 접근
 const auth = new JWT({ ...credentials, scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"] });
