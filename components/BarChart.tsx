@@ -11,7 +11,7 @@ export function BarChart({ data }: { data: Count[] }) {
         <li key={d.label} className="flex items-center gap-3 text-sm">
           <span className="w-14 shrink-0 text-muted">{d.label}</span>
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <div className="h-5 rounded-r bg-series-1" style={{ width: `${(d.count / max) * 85}%` }} />
+            <div className="h-5 rounded-r-full bg-series-1" style={{ width: `${(d.count / max) * 85}%` }} />
             <span className="whitespace-nowrap tabular-nums">
               <span className="font-semibold">{d.count.toLocaleString()}</span>
               <span className="ml-1 text-muted">({total ? Math.round((d.count / total) * 100) : 0}%)</span>

@@ -20,7 +20,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="다크 모드 전환"
       title="다크 모드 전환"
-      className="rounded-md px-2 py-1 text-muted hover:bg-background hover:text-foreground"
+      className="rounded-full px-2.5 py-1 text-xs text-muted hover:bg-background hover:text-foreground"
     >
       <span className="theme-icon-moon">🌙 다크</span>
       <span className="theme-icon-sun">☀️ 라이트</span>

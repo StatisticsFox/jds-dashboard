@@ -42,7 +42,7 @@ async function requestCode(_prev: LoginState, formData: FormData): Promise<Login
   return {
     step: "code",
     email,
-    message: "허용된 이메일이라면 인증 코드를 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.",
+    message: "등록된 이메일이라면 코드를 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.",
   };
 }
 

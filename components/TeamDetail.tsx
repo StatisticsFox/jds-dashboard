@@ -1,4 +1,5 @@
 import { DiffLabel, DivergingBar } from "@/components/DivergingBar";
+import { Star } from "@/components/Mascot";
 import { COUNT_METRICS, RATE_METRICS, type Summary, type TeamResult } from "@/lib/conversion";
 import { formatCount, formatCountDiff, formatRate, formatRateDiff } from "@/lib/format";
 
@@ -19,7 +20,7 @@ export function TeamDetail({ team, summary, teamCount }: { team: TeamResult; sum
           return (
             <Row key={m.key}>
               <span className="font-medium">{m.label}</span>
-              <span className="text-right text-lg font-bold">{formatRate(value)}</span>
+              <span className="text-right font-cute text-xl">{formatRate(value)}</span>
               <span className="text-right text-muted">{formatRate(base)}</span>
               <DivergingBar diff={diff} scale={rateScale[m.key]} />
               <span className="text-right">
@@ -40,7 +41,7 @@ export function TeamDetail({ team, summary, teamCount }: { team: TeamResult; sum
               <span className="font-medium" title={m.hint}>
                 {m.label}
               </span>
-              <span className="text-right text-lg font-bold">{formatCount(team.counts[m.key])}</span>
+              <span className="text-right font-cute text-xl">{formatCount(team.counts[m.key])}</span>
               <span className="text-right text-muted">{formatCount(Math.round(average[m.key] * 10) / 10)}</span>
               <DivergingBar diff={diff} scale={countScale[m.key]} />
               <span className="text-right">
@@ -61,9 +62,10 @@ export function TeamDetail({ team, summary, teamCount }: { team: TeamResult; sum
 
 function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-surface p-5">
-      <h3 className="font-semibold">
-        {title} <span className="ml-1 text-sm font-normal text-muted">{subtitle}</span>
+    <section className="card p-5">
+      <h3 className="flex items-center gap-2 text-xl">
+        <Star size={20} />
+        {title} <span className="font-sans text-sm text-muted">{subtitle}</span>
       </h3>
       <div className="-mx-5 mt-4 overflow-x-auto px-5">
         <div className="min-w-[480px] space-y-1 text-sm tabular-nums">{children}</div>
@@ -85,7 +87,7 @@ function Header({ columns }: { columns: string[] }) {
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div className={`${GRID} rounded-md py-2 hover:bg-background`}>{children}</div>;
+  return <div className={`${GRID} rounded-xl py-2 hover:bg-accent-soft/60`}>{children}</div>;
 }
 
 function Rank({ rank, total }: { rank: number | undefined; total: number }) {

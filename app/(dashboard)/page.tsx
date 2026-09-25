@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CaptureArea } from "@/components/CaptureArea";
 import { MetricCompare } from "@/components/MetricCompare";
 import { TeamDetail } from "@/components/TeamDetail";
+import { Mascot, Star } from "@/components/Mascot";
 import { TeamTable } from "@/components/TeamTable";
 import { formatCount, formatCountDiff, formatRate, formatRateDiff } from "@/lib/format";
 import { requireUser } from "@/lib/dal";
@@ -10,7 +11,7 @@ import { COUNT_METRICS, getConversionData, RATE_METRICS, summarize, TEAMS, toRat
 const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export default async function ConversionPage({ searchParams }: PageProps<"/">) {
-  await requireUser();
+  const user = await requireUser();
   const params = await searchParams;
   const { defaults, presets, courses, count } = await getConversionData();
 
@@ -45,37 +46,55 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header>
-        <h1 className="text-2xl font-bold">새빛지역 팀별 유월율</h1>
-        <p className="mt-1 text-sm text-muted">
-          {settings.course} 개강 기준 · 타찾 {settings.tachatStart} ~ {settings.tachatEnd} · 상예 {settings.sangyeStart} ~ {settings.sangyeEnd}
-        </p>
+      {/* 인사 + 현재 기준 */}
+      <header className="card relative flex items-center gap-4 overflow-hidden p-5 sm:p-6">
+        <Mascot size={64} className="animate-bob" />
+        <div className="min-w-0">
+          <p className="text-sm text-muted">{user.name}님, 오늘도 반가워요!</p>
+          <h1 className="mt-0.5 text-2xl sm:text-3xl">새빛지역 팀별 유월율</h1>
+          <p className="mt-2 flex flex-wrap gap-1.5 text-xs">
+            <span className="rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-ink">{settings.course} 개강</span>
+            <span className="rounded-full bg-accent-soft px-2.5 py-1 text-accent-strong">
+              타찾 {settings.tachatStart} ~ {settings.tachatEnd}
+            </span>
+            <span className="rounded-full bg-accent-soft px-2.5 py-1 text-accent-strong">
+              상예 {settings.sangyeStart} ~ {settings.sangyeEnd}
+            </span>
+          </p>
+        </div>
+        {/* 별 장식은 넓은 화면에서만 (좁으면 글자와 겹침) */}
+        <span className="absolute right-6 top-5 hidden sm:block">
+          <Star size={26} className="animate-twinkle" />
+        </span>
+        <span className="absolute bottom-6 right-14 hidden sm:block">
+          <Star size={16} className="animate-twinkle [animation-delay:1s]" />
+        </span>
       </header>
 
       {/* 설정: 제출하면 ?ts=...&te=...&ss=...&se=...&course=... 주소로 이동 */}
-      <section className="rounded-xl border border-border bg-surface p-5">
+      <section className="card p-5">
         <form className="flex flex-wrap items-end gap-x-6 gap-y-4 text-sm">
           {tab !== "all" && <input type="hidden" name="team" value={tab} />}
           <DateRange label="타찾 기간" names={["ts", "te"]} values={[settings.tachatStart, settings.tachatEnd]} />
           <DateRange label="상예 기간" names={["ss", "se"]} values={[settings.sangyeStart, settings.sangyeEnd]} />
           <label className="space-y-1.5">
             <span className="block font-medium">기준 개강</span>
-            <select name="course" defaultValue={settings.course} className="rounded-md border border-border bg-background px-2 py-1.5">
+            <select name="course" defaultValue={settings.course} className="field px-3 py-1.5">
               {courses.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
           </label>
-          <button className="rounded-md bg-foreground px-4 py-1.5 font-medium text-background">적용</button>
+          <button className="btn-primary px-5 py-2">적용하기</button>
         </form>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-grid pt-4 text-xs">
-          <span className="text-muted">기간 불러오기</span>
+          <span className="flex items-center gap-1 text-muted"><Star size={13} /> 기간 불러오기</span>
           {presets.map((p) => (
             <Link
               key={p.label}
               href={{ query: { ...query, ts: p.tachatStart, te: p.tachatEnd, ss: p.sangyeStart, se: p.sangyeEnd, ...(tab !== "all" && { team: tab }) } }}
-              className="rounded-full border border-border px-2.5 py-1 hover:bg-background"
+              className="rounded-full border border-border bg-surface px-3 py-1 hover:border-accent hover:bg-accent-soft"
             >
               {p.label}
             </Link>
@@ -85,24 +104,25 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
           </Link>
         </div>
         {warnings.map((w) => (
-          <p key={w} className="mt-3 text-sm font-medium">
+          <p key={w} className="mt-3 rounded-xl bg-star/40 px-3 py-2 text-sm font-medium">
             ⚠️ {w}
           </p>
         ))}
       </section>
 
       {/* 지역 전체 흐름 */}
-      <CaptureArea className="rounded-xl border border-border bg-surface p-5" fileName={fileName("지역전체")} caption={caption}>
-        <h2 className="font-semibold">지역 전체</h2>
+      <CaptureArea className="card p-5" fileName={fileName("지역전체")} caption={caption}>
+        <SectionTitle>지역 전체</SectionTitle>
         <ol className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {COUNT_METRICS.map((m, i) => {
             const rate = RATE_METRICS.find((r) => r.numerator === m.key && r.key !== "tachatToSangdam");
             return (
-              <li key={m.key} className="rounded-lg bg-background p-3" title={m.hint}>
-                <div className="text-xs text-muted">
-                  {i + 1}. {m.label}
+              <li key={m.key} className="tile p-3.5" title={m.hint}>
+                <div className="flex items-center gap-1.5 text-xs text-muted">
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-surface text-[10px] font-bold text-accent-strong">{i + 1}</span>
+                  {m.label}
                 </div>
-                <div className="mt-1 text-3xl font-bold">{formatCount(region[m.key])}</div>
+                <div className="mt-1.5 font-cute text-4xl">{formatCount(region[m.key])}</div>
                 <div className="mt-1 h-4 text-xs text-muted">
                   {rate && (
                     <>
@@ -124,13 +144,13 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
 
       {/* 탭: 전체 비교 / 팀별 */}
       <nav className="-mx-4 overflow-x-auto px-4">
-        <div className="flex w-max gap-1 rounded-lg border border-border bg-surface p-1 text-sm">
+        <div className="flex w-max gap-1 rounded-full border border-border bg-surface p-1 text-sm shadow-sm">
           {[{ id: "all" as const, label: "전체 비교", emoji: "" }, ...TEAMS].map((t) => (
             <Link
               key={t.id}
               href={{ query: { ...query, ...(t.id !== "all" && { team: t.id }) } }}
               scroll={false}
-              className={`whitespace-nowrap rounded-md px-3 py-1.5 font-medium ${t.id === tab ? "bg-foreground text-background" : "text-muted hover:text-foreground"}`}
+              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 font-medium ${t.id === tab ? "bg-accent text-accent-ink shadow-sm" : "text-muted hover:bg-accent-soft hover:text-foreground"}`}
             >
               {t.emoji} {t.label}
             </Link>
@@ -140,17 +160,15 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
 
       {selected ? (
         <CaptureArea className="-m-4 space-y-4 p-4" fileName={fileName(`${selected.label}`)} caption={caption}>
-          <h2 className="text-xl font-bold">
+          <h2 className="text-2xl">
             {selected.emoji} {selected.label}
           </h2>
           <TeamDetail team={selected} summary={summary} teamCount={teams.length} />
         </CaptureArea>
       ) : (
         <>
-          <CaptureArea className="rounded-xl border border-border bg-surface p-5" fileName={fileName("전체_유월율")} caption={caption}>
-            <h2 className="font-semibold">
-              유월율 <span className="ml-1 text-sm font-normal text-muted">지역 유월율 대비</span>
-            </h2>
+          <CaptureArea className="card p-5" fileName={fileName("전체_유월율")} caption={caption}>
+            <SectionTitle sub="지역 유월율 대비">유월율</SectionTitle>
             <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {RATE_METRICS.map((m) => (
                 <MetricCompare
@@ -169,10 +187,8 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
             </div>
           </CaptureArea>
 
-          <CaptureArea className="rounded-xl border border-border bg-surface p-5" fileName={fileName("전체_수치")} caption={caption}>
-            <h2 className="font-semibold">
-              수치 <span className="ml-1 text-sm font-normal text-muted">팀 평균 달성 개수 대비</span>
-            </h2>
+          <CaptureArea className="card p-5" fileName={fileName("전체_수치")} caption={caption}>
+            <SectionTitle sub="팀 평균 달성 개수 대비">수치</SectionTitle>
             <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {COUNT_METRICS.map((m) => (
                 <MetricCompare
@@ -189,8 +205,8 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
             </div>
           </CaptureArea>
 
-          <CaptureArea className="rounded-xl border border-border bg-surface p-5" fileName={fileName("전체_상세표")} caption={caption}>
-            <h2 className="font-semibold">팀별 상세</h2>
+          <CaptureArea className="card p-5" fileName={fileName("전체_상세표")} caption={caption}>
+            <SectionTitle>팀별 상세</SectionTitle>
             <p className="mt-1 text-xs text-muted">
               시트와 같은 표 · 칸 색은 높으면 초록, 낮으면 빨강 · 수치는 팀 평균, 유월율은 지역 유월율과 비교
             </p>
@@ -207,10 +223,21 @@ function DateRange({ label, names, values }: { label: string; names: [string, st
     <fieldset className="space-y-1.5">
       <legend className="mb-1.5 font-medium">{label}</legend>
       <div className="flex items-center gap-2">
-        <input type="date" name={names[0]} defaultValue={values[0]} className="rounded-md border border-border bg-background px-2 py-1.5" />
+        <input type="date" name={names[0]} defaultValue={values[0]} className="field px-2.5 py-1.5" />
         <span className="text-muted">~</span>
-        <input type="date" name={names[1]} defaultValue={values[1]} className="rounded-md border border-border bg-background px-2 py-1.5" />
+        <input type="date" name={names[1]} defaultValue={values[1]} className="field px-2.5 py-1.5" />
       </div>
     </fieldset>
+  );
+}
+
+// 카드 제목: 별 + 둥근 글꼴
+function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
+  return (
+    <h2 className="flex items-center gap-2 text-xl">
+      <Star size={20} />
+      {children}
+      {sub && <span className="font-sans text-sm text-muted">{sub}</span>}
+    </h2>
   );
 }

@@ -4,10 +4,10 @@ export function DivergingBar({ diff, scale }: { diff: number | null; scale: numb
   const width = diff && scale ? Math.min(1, Math.abs(diff) / scale) * 50 : 0;
   return (
     <div className="relative h-5 min-w-24">
-      <div className="absolute inset-y-0 left-1/2 w-px bg-foreground/40" />
+      <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-border" />
       {width > 0 && (
         <div
-          className={`absolute inset-y-0.5 ${diff! > 0 ? "left-1/2 rounded-r bg-good" : "right-1/2 rounded-l bg-bad"}`}
+          className={`absolute inset-y-1 ${diff! > 0 ? "left-1/2 rounded-r-full bg-good" : "right-1/2 rounded-l-full bg-bad"}`}
           style={{ width: `max(${width}%, 2px)` }}
         />
       )}

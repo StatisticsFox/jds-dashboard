@@ -24,7 +24,7 @@ export function CaptureArea({ fileName, caption, className = "", children }: Pro
     try {
       const blob = await toBlob(node, {
         pixelRatio: 2,
-        backgroundColor: getComputedStyle(document.body).backgroundColor,
+        backgroundColor: getComputedStyle(node).getPropertyValue("--background").trim() || "#ffffff",
         style: { margin: "0" },
         filter: (el) => !(el instanceof HTMLElement && el.dataset.captureIgnore !== undefined),
       });
@@ -70,15 +70,15 @@ export function CaptureArea({ fileName, caption, className = "", children }: Pro
     }
   }
 
-  const button = "px-2 py-1 hover:bg-background hover:text-foreground disabled:opacity-50";
+  const button = "px-2.5 py-1 hover:bg-accent-soft hover:text-foreground disabled:opacity-50";
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div
         data-capture-ignore
-        className="absolute right-4 top-4 z-10 flex divide-x divide-border overflow-hidden rounded-md border border-border bg-surface text-xs text-muted"
+        className="absolute right-4 top-4 z-10 flex divide-x divide-border overflow-hidden rounded-full border border-border bg-surface text-xs text-muted shadow-sm"
       >
         {status === "copied" || status === "saved" ? (
-          <span className="px-2 py-1 font-medium text-good">✓ {status === "copied" ? "복사됨" : "저장됨"}</span>
+          <span className="px-2.5 py-1 font-medium text-good">✓ {status === "copied" ? "복사됨" : "저장됨"}</span>
         ) : (
           <>
             <button type="button" onClick={copy} disabled={status === "busy"} className={button} title="이미지를 클립보드에 복사">

@@ -45,7 +45,7 @@ export function TeamTable({ teams, region, summary }: { teams: TeamResult[]; reg
               {COUNT_METRICS.map((m) => {
                 const diff = t.counts[m.key] - average[m.key];
                 return (
-                  <td key={m.key} className="rounded px-2 py-1.5 text-right" style={tint(diff, average[m.key])}>
+                  <td key={m.key} className="rounded-lg px-2 py-1.5 text-right" style={tint(diff, average[m.key])}>
                     <div className="font-semibold">{formatCount(t.counts[m.key])}</div>
                     <div className="text-xs text-muted">{formatCountDiff(diff)}</div>
                   </td>
@@ -56,7 +56,7 @@ export function TeamTable({ teams, region, summary }: { teams: TeamResult[]; reg
                 const base = regionRates[m.key];
                 const diff = value !== null && base !== null ? value - base : null;
                 return (
-                  <td key={m.key} className="rounded px-2 py-1.5 text-right" style={diff !== null ? tint(diff, base!) : undefined}>
+                  <td key={m.key} className="rounded-lg px-2 py-1.5 text-right" style={diff !== null ? tint(diff, base!) : undefined}>
                     <div className="font-semibold">{formatRate(value)}</div>
                     <div className="text-xs text-muted">{diff !== null ? formatRateDiff(diff) : " "}</div>
                   </td>

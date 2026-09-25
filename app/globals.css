@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* 기본(로그인 화면 등): 평범한 회색 계열 */
 :root {
   color-scheme: light;
   --background: #f5f5f4;
@@ -8,9 +9,17 @@
   --muted: #52514e;
   --border: #e4e3df;
   --grid: #ecebe7;
+  --accent: #0b0b0b;
+  --accent-ink: #ffffff;
+  --accent-soft: #ecebe7;
+  --accent-strong: #0b0b0b;
+  --star: #e4e3df;
+  --star-edge: #a3a29c;
+  --cocoa: #52514e;
   --series-1: #2a78d6;
   --good: #0ca30c;
   --bad: #d03b3b;
+  --shadow: none;
 }
 
 @theme inline {
@@ -20,11 +29,19 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-grid: var(--grid);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-star: var(--star);
+  --color-star-edge: var(--star-edge);
+  --color-cocoa: var(--cocoa);
   --color-series-1: var(--series-1);
   --color-good: var(--good);
   --color-bad: var(--bad);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-cute: var(--font-jua);
 }
 
 /* 다크 모드: 사용자가 직접 고르면 <html data-theme="dark|light">, 안 고르면 기기 설정을 따름 */
@@ -37,12 +54,15 @@
     --muted: #c3c2b7;
     --border: #2e2e2c;
     --grid: #262624;
+    --accent: #ffffff;
+    --accent-ink: #0b0b0b;
+    --accent-soft: #262624;
+    --accent-strong: #ffffff;
     --series-1: #3987e5;
     --good: #2fb82f;
     --bad: #e66767;
   }
 }
-
 :root[data-theme="dark"] {
   color-scheme: dark;
   --background: #0f0f0e;
@@ -51,9 +71,168 @@
   --muted: #c3c2b7;
   --border: #2e2e2c;
   --grid: #262624;
+  --accent: #ffffff;
+  --accent-ink: #0b0b0b;
+  --accent-soft: #262624;
+  --accent-strong: #ffffff;
   --series-1: #3987e5;
   --good: #2fb82f;
   --bad: #e66767;
+}
+
+/* ── 대시보드 안쪽(로그인 후)만: 캐릭터 '총총' 테마 ──────────────
+   민트 귀 · 하얀 얼굴 · 노란 별(주황 테두리) · 갈색 눈 */
+.theme-cute {
+  --background: #f3faf5;
+  --foreground: #17231c;
+  --surface: #ffffff;
+  --muted: #5a6d62;
+  --border: #d7ede0;
+  --grid: #e8f4ec;
+  --accent: #45ef93;
+  --accent-ink: #0b3a22;
+  --accent-soft: #e2f8eb;
+  --accent-strong: #11894b;
+  --star: #ffe58a;
+  --star-edge: #f5a04a;
+  --cocoa: #a8603f;
+  --series-1: #17a35f;
+  --good: #15a052;
+  --bad: #e5484d;
+  --shadow: 0 1px 2px rgb(23 35 28 / 0.04), 0 10px 30px -18px rgb(17 137 75 / 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-cute {
+    --background: #0d1611;
+    --foreground: #eefcf3;
+    --surface: #15211a;
+    --muted: #a3bdad;
+    --border: #243a2d;
+    --grid: #1c2d23;
+    --accent-ink: #062414;
+    --accent-soft: #183526;
+    --accent-strong: #5ff3a5;
+    --star: #ffe07a;
+    --cocoa: #e0a07f;
+    --series-1: #45ef93;
+    --good: #3ddc7e;
+    --bad: #ff6b6f;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -20px rgb(0 0 0 / 0.8);
+  }
+}
+:root[data-theme="dark"] .theme-cute {
+  --background: #0d1611;
+  --foreground: #eefcf3;
+  --surface: #15211a;
+  --muted: #a3bdad;
+  --border: #243a2d;
+  --grid: #1c2d23;
+  --accent-ink: #062414;
+  --accent-soft: #183526;
+  --accent-strong: #5ff3a5;
+  --star: #ffe07a;
+  --cocoa: #e0a07f;
+  --series-1: #45ef93;
+  --good: #3ddc7e;
+  --bad: #ff6b6f;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -20px rgb(0 0 0 / 0.8);
+}
+
+.theme-cute {
+  background:
+    radial-gradient(900px 420px at 8% -8%, var(--accent-soft), transparent 70%),
+    radial-gradient(700px 380px at 105% 12%, color-mix(in oklab, var(--star) 28%, transparent), transparent 70%),
+    var(--background);
+  background-attachment: fixed;
+  color: var(--foreground);
+}
+.theme-cute h1,
+.theme-cute h2,
+.theme-cute h3 {
+  font-family: var(--font-jua), var(--font-geist-sans), sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+@layer components {
+  /* 둥근 카드 */
+  .card {
+    border-radius: 1.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  /* 카드 안의 작은 칸 */
+  .tile {
+    border-radius: 1.1rem;
+    background: color-mix(in oklab, var(--accent-soft) 70%, var(--surface));
+  }
+  /* 민트 버튼 */
+  .btn-primary {
+    border-radius: 9999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    box-shadow: 0 2px 0 color-mix(in oklab, var(--accent) 55%, #0b3a22);
+    transition:
+      transform 0.1s,
+      filter 0.15s;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.04);
+  }
+  .btn-primary:active {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+  .btn-primary:disabled {
+    opacity: 0.55;
+  }
+  /* 입력칸 */
+  .field {
+    border-radius: 0.9rem;
+    border: 1.5px solid var(--border);
+    background: var(--background);
+    outline: none;
+  }
+  .field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+}
+
+/* 캐릭터가 살짝 통통 튀는 움직임 (움직임 줄이기 설정이면 멈춤) */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8) rotate(12deg);
+    opacity: 0.7;
+  }
+}
+.animate-bob {
+  animation: bob 3.2s ease-in-out infinite;
+}
+.animate-twinkle {
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-bob,
+  .animate-twinkle {
+    animation: none;
+  }
 }
 
 /* 테마 버튼 아이콘: 밝을 때는 달, 어두울 때는 해 */
@@ -87,4 +266,171 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+/* ── 로그인 화면: 테마와 관계없이 항상 어두운 미니멀 스타일 ───────── */
+.auth {
+  color-scheme: dark;
+  --auth-bg: #07080a;
+  --auth-text: #eceef1;
+  --auth-muted: #8a9099;
+  --auth-line: rgb(255 255 255 / 0.08);
+  --auth-line-strong: rgb(255 255 255 / 0.16);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--auth-bg);
+  color: var(--auth-text);
+  font-family: var(--font-geist-sans), "Apple SD Gothic Neo", sans-serif;
+}
+/* 가장자리로 갈수록 사라지는 옅은 격자 */
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(var(--auth-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--auth-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 45%, #000 20%, transparent 75%);
+  opacity: 0.55;
+}
+/* 천천히 움직이는 흐릿한 빛 */
+.auth-glow {
+  position: absolute;
+  z-index: -1;
+  width: 38rem;
+  height: 38rem;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.28;
+  animation: auth-drift 18s ease-in-out infinite alternate;
+}
+@keyframes auth-drift {
+  from {
+    transform: translate(-6%, -4%) scale(1);
+  }
+  to {
+    transform: translate(8%, 6%) scale(1.12);
+  }
+}
+/* 마우스를 따라다니는 빛: 카드 테두리와 안쪽에 은은하게 */
+.auth-card {
+  position: relative;
+  border-radius: 1.25rem;
+  background: rgb(255 255 255 / 0.025);
+  border: 1px solid var(--auth-line);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.4),
+    0 30px 80px -30px rgb(0 0 0 / 0.9);
+}
+.auth-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.45), transparent 60%);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.auth-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.06), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.auth-card:hover::before,
+.auth-card:hover::after {
+  opacity: 1;
+}
+.auth-input {
+  width: 100%;
+  border-radius: 0.7rem;
+  border: 1px solid var(--auth-line);
+  background: rgb(255 255 255 / 0.03);
+  color: var(--auth-text);
+  outline: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.auth-input::placeholder {
+  color: rgb(255 255 255 / 0.28);
+}
+.auth-input:hover {
+  border-color: var(--auth-line-strong);
+}
+.auth-input:focus {
+  border-color: rgb(255 255 255 / 0.4);
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.06);
+}
+/* 흰 버튼: 올리면 빛이 한 번 스쳐 지나가고 화살표가 살짝 움직임 */
+.auth-button {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border-radius: 0.7rem;
+  background: #f4f5f7;
+  color: #07080a;
+  font-weight: 600;
+  transition:
+    transform 0.15s,
+    box-shadow 0.25s,
+    background 0.2s;
+}
+.auth-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.9) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+.auth-button:hover:not(:disabled) {
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25), 0 8px 30px -6px rgb(255 255 255 / 0.25);
+}
+.auth-button:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+.auth-button:active:not(:disabled) {
+  transform: scale(0.99);
+}
+.auth-button:disabled {
+  opacity: 0.6;
+}
+.auth-button .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.auth-button:hover:not(:disabled) .arrow {
+  transform: translateX(3px);
+}
+.auth-link {
+  color: var(--auth-muted);
+  transition: color 0.2s;
+}
+.auth-link:hover {
+  color: var(--auth-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-glow {
+    animation: none;
+  }
+  .auth-button::after {
+    display: none;
+  }
 }

@@ -27,10 +27,10 @@ export function ColumnChart({ data }: { data: Count[] }) {
             {data.map((d) => (
               <div key={d.label} className="group relative flex h-full flex-1 items-end justify-center">
                 <div
-                  className="w-full max-w-6 rounded-t bg-series-1 transition-opacity group-hover:opacity-80"
+                  className="w-full max-w-6 rounded-t-full bg-series-1 transition-opacity group-hover:opacity-80"
                   style={{ height: `${(d.count / top) * 100}%` }}
                 />
-                <div className="pointer-events-none absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded-md border border-border bg-surface px-2 py-1 text-xs shadow group-hover:block">
+                <div className="pointer-events-none absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded-xl border border-border bg-surface px-2.5 py-1 text-xs shadow group-hover:block">
                   <div className="text-muted">{d.label.replace("-", "년 ")}월</div>
                   <div className="font-semibold">{d.count.toLocaleString()}개</div>
                 </div>

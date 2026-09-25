@@ -11,6 +11,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // 로그인 화면과 정적 파일은 제외
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  // 로그인 화면, Next.js 내부 파일, 확장자가 있는 정적 파일(캐릭터 이미지·아이콘 등)은 제외
+  matcher: ["/((?!login|_next/static|_next/image|.*\\..*).*)"],
 };

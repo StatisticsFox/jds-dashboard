@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
+import { Mascot } from "@/components/Mascot";
+import { NavLinks } from "@/components/NavLinks";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getCurrentUser } from "@/lib/dal";
 
@@ -8,25 +10,20 @@ export async function NavBar() {
   const user = await getCurrentUser();
 
   return (
-    <nav className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2 text-sm font-medium">
-        {user ? (
-          <>
-            <Link href="/">팀별 유월율</Link>
-            <Link href="/trend" className="text-muted hover:text-foreground">
-              열매 추이
-            </Link>
-          </>
-        ) : (
-          <span>새빛 대시보드</span>
-        )}
-        <div className="ml-auto flex items-center gap-3">
+    <nav className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-sm font-medium">
+        <Link href="/" className="flex items-center gap-2">
+          <Mascot size={32} />
+          <span className="font-cute text-lg">새빛 대시보드</span>
+        </Link>
+        {user && <NavLinks />}
+        <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           {user && (
             <>
-              <span className="hidden text-xs font-normal text-muted sm:inline">{user.name}</span>
+              <span className="hidden rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent-strong sm:inline">{user.name}님</span>
               <form action={logout}>
-                <button className="rounded-md px-2 py-1 text-xs text-muted hover:bg-background hover:text-foreground">로그아웃</button>
+                <button className="rounded-full px-2.5 py-1 text-xs text-muted hover:bg-background hover:text-foreground">로그아웃</button>
               </form>
             </>
           )}

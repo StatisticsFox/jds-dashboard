@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart } from "@/components/BarChart";
 import { ColumnChart } from "@/components/ColumnChart";
+import { Mascot, Star } from "@/components/Mascot";
 import { countByMonth, countByTeam, dateBounds, filterByDate } from "@/lib/metrics";
 import { requireUser } from "@/lib/dal";
 import { getFruits, STAGES, type Stage } from "@/lib/sheets";
@@ -38,7 +39,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
       <header className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">열매 대시보드</h1>
+          <h1 className="flex items-center gap-2 text-3xl"><Mascot size={44} />열매 추이</h1>
           <p className="mt-1 text-sm text-muted">
             {config.dateColumn} 기준 · 탈락 포함 · 데이터 기간 {bounds.min} ~ {bounds.max}
           </p>
@@ -46,12 +47,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* 열매 단계 선택: 기간은 그대로 유지 */}
-          <nav className="flex rounded-lg border border-border bg-surface p-1 text-sm">
+          <nav className="flex rounded-full border border-border bg-surface p-1 text-sm shadow-sm">
             {(Object.keys(STAGES) as Stage[]).map((s) => (
               <Link
                 key={s}
                 href={{ query: { stage: s, ...(isDate(params.from) && { from }), ...(isDate(params.to) && { to }) } }}
-                className={`rounded-md px-3 py-1.5 font-medium ${s === stage ? "bg-foreground text-background" : "text-muted"}`}
+                className={`rounded-full px-3.5 py-1.5 font-medium ${s === stage ? "bg-accent text-accent-ink" : "text-muted hover:bg-accent-soft"}`}
               >
                 {STAGES[s].label}
               </Link>
@@ -61,10 +62,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           {/* 기간 선택: 제출하면 ?stage=...&from=...&to=... 주소로 이동 */}
           <form className="flex flex-wrap items-center gap-2 text-sm">
             <input type="hidden" name="stage" value={stage} />
-            <input type="date" name="from" defaultValue={from} className="rounded-md border border-border bg-surface px-2 py-1.5" />
+            <input type="date" name="from" defaultValue={from} className="field px-2.5 py-1.5" />
             <span className="text-muted">~</span>
-            <input type="date" name="to" defaultValue={to} className="rounded-md border border-border bg-surface px-2 py-1.5" />
-            <button className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background">적용</button>
+            <input type="date" name="to" defaultValue={to} className="field px-2.5 py-1.5" />
+            <button className="btn-primary px-4 py-1.5">적용</button>
             <Link href={{ query: { stage } }} className="px-1 text-muted underline-offset-2 hover:underline">
               최근 12개월
             </Link>
@@ -109,9 +110,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
 function Stat({ label, value, sub, hero }: { label: string; value: string; sub?: string; hero?: boolean }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="card p-4">
       <div className="text-sm text-muted">{label}</div>
-      <div className={`mt-1 font-bold ${hero ? "text-4xl" : "text-2xl"}`}>{value}</div>
+      <div className={`mt-1 font-cute ${hero ? "text-5xl" : "text-3xl"}`}>{value}</div>
       {sub && <div className="mt-1 text-xs text-muted">{sub}</div>}
     </div>
   );
@@ -119,8 +120,8 @@ function Stat({ label, value, sub, hero }: { label: string; value: string; sub?:
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-surface p-5">
-      <h2 className="mb-4 font-semibold">{title}</h2>
+    <section className="card p-5">
+      <h2 className="mb-4 flex items-center gap-2 text-xl"><Star size={20} />{title}</h2>
       {children}
     </section>
   );
