@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PendingLink } from "@/components/Pending";
 
 type Category = { label: string; color: string };
 type Row = { key: string; label: string; href: object; active: boolean; counts: Map<string, number> };
@@ -25,9 +25,8 @@ export function StackedShare({ categories, rows, rowLabel = "주차" }: { catego
           const total = [...r.counts.values()].reduce((a, b) => a + b, 0);
           return (
             <li key={r.key}>
-              <Link
+              <PendingLink
                 href={r.href}
-                scroll={false}
                 aria-current={r.active}
                 className={`grid grid-cols-[5rem_1fr_3.5rem] items-center gap-3 rounded-xl px-2 py-1.5 transition-colors ${
                   r.active ? "bg-accent-soft" : "hover:bg-accent-soft/50"
@@ -57,7 +56,7 @@ export function StackedShare({ categories, rows, rowLabel = "주차" }: { catego
                   })}
                 </span>
                 <span className="text-right text-xs tabular-nums text-muted">{total.toLocaleString()}명</span>
-              </Link>
+              </PendingLink>
             </li>
           );
         })}

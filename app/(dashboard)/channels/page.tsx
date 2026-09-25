@@ -6,6 +6,7 @@ import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicke
 import { DonutChart } from "@/components/DonutChart";
 import { StackedShare } from "@/components/StackedShare";
 import { getChannelData, OTHER } from "@/lib/channels";
+import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 
 // 섭외유형 색: 43년 전체 순위대로 고정 (선택을 바꿔도 같은 유형은 같은 색). 기타는 회색
@@ -18,7 +19,7 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
   const { categories, otherMembers, courses } = await getChannelData();
 
   // 개강 하나·주차 하나 (?c=43-9&w=8|all)
-  const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params);
+  const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params, await preferredCourse());
 
   const counts = new Map<string, number>();
   for (const [w, byType] of course?.weeks ?? []) {

@@ -5,6 +5,7 @@ import { dataFetchedAt } from "@/lib/data-time";
 import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
 import { ReasonBars } from "@/components/ReasonBars";
 import { ReasonHeatmap } from "@/components/ReasonHeatmap";
+import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import { getDropData, sumDrops } from "@/lib/drops";
 
@@ -14,7 +15,7 @@ export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
   const { reasons, courses } = await getDropData();
 
   // 개강 하나·주차 하나 (?c=43-9&w=8|all)
-  const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params);
+  const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params, await preferredCourse());
   const all = sumDrops([...(course?.weeks.values() ?? [])]);
   const current = week === "all" ? all : (course?.weeks.get(week as number) ?? sumDrops([]));
   const dropped = [...current.reasons.values()].reduce((a, b) => a + b, 0);

@@ -5,6 +5,7 @@ import { CaptureArea } from "@/components/CaptureArea";
 import { Chip, ChipRow } from "@/components/Chip";
 import { PageHeader } from "@/components/PageHeader";
 import { ATTRS, getCenterData, mbtiAxes, orderValues, tally, type AttrKey, type Person } from "@/lib/center";
+import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 
 const isAttr = (v: unknown): v is AttrKey => typeof v === "string" && ATTRS.some((a) => a.key === v);
@@ -23,7 +24,8 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
   const years = [...new Set(courses.map((c) => c.year))];
 
   // 선택: 개강 하나(?c=43-5), 연도 전체(?c=y43), 전체(?c=all). 없으면 가장 최근 개강
-  const sel = typeof params.c === "string" ? params.c : (courses.at(-1)?.id ?? "all");
+  const pref = await preferredCourse();
+  const sel = typeof params.c === "string" ? params.c : (courses.find((c) => c.id === pref)?.id ?? courses.at(-1)?.id ?? "all");
   const selCourse = courses.find((c) => c.id === sel);
   const selYear = sel.startsWith("y") ? Number(sel.slice(1)) : null;
   const people: Person[] = selCourse ? selCourse.people : courses.filter((c) => sel === "all" || c.year === selYear).flatMap((c) => c.people);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NavBar } from "@/components/NavBar";
+import { PendingProvider } from "@/components/Pending";
 
 export const metadata: Metadata = {
   title: "새빛 대시보드",
@@ -12,7 +13,9 @@ export default function DashboardLayout({ children }: LayoutProps<"/">) {
       {/* 한글 글꼴 Pretendard: 쓰는 글자 조각만 내려받는 방식 */}
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" precedence="default" />
       <NavBar />
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1">
+        <PendingProvider>{children}</PendingProvider>
+      </div>
     </div>
   );
 }

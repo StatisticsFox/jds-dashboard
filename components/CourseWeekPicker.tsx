@@ -4,9 +4,9 @@ type PickCourse = { id: string; label: string; weeks: Map<number, unknown> };
 export type WeekChoice = number | "all";
 
 // 주소(?c=43-9&w=8|all)에서 개강 하나·주차 하나를 고름.
-// 없으면 가장 최근 개강, 그 개강의 가장 최근(작은) 주차
-export function selectCourseWeek<T extends PickCourse>(courses: T[], params: Record<string, string | string[] | undefined>) {
-  const course = courses.find((c) => c.id === params.c) ?? courses.at(-1);
+// 주소에 개강이 없으면 다른 탭에서 고른 개강(pref), 그것도 없으면 가장 최근 개강. 주차는 그 개강의 가장 최근(작은) 주차
+export function selectCourseWeek<T extends PickCourse>(courses: T[], params: Record<string, string | string[] | undefined>, pref?: string) {
+  const course = courses.find((c) => c.id === params.c) ?? courses.find((c) => c.id === pref) ?? courses.at(-1);
   const weeks = course ? [...course.weeks.keys()].sort((a, b) => b - a) : [];
   const week: WeekChoice | undefined = params.w === "all" ? "all" : (weeks.find((w) => String(w) === params.w) ?? weeks.at(-1));
   return { course, weeks, week, weekLabel: week === "all" ? "전체 주차" : `${week}주차` };

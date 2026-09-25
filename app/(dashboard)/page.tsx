@@ -8,6 +8,7 @@ import { TeamDetail } from "@/components/TeamDetail";
 import { PageHeader } from "@/components/PageHeader";
 import { TeamTable } from "@/components/TeamTable";
 import { formatCount, formatCountDiff, formatRate, formatRateDiff } from "@/lib/format";
+import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import { COUNT_METRICS, getConversionData, RATE_METRICS, summarize, TEAMS, toRates, type Settings } from "@/lib/conversion";
 
@@ -19,12 +20,22 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
   const { defaults, presets, courses, count } = await getConversionData();
 
   // 주소에 값이 없으면 시트 '팀별 유월율'에 저장된 설정값을 사용
+  // 주소에 설정이 하나도 없고, 다른 탭에서 고른 개강의 기간이 '각 개강별 기간'에 있으면 그 개강·기간으로 시작
+  const pref = await preferredCourse();
+  const [prefYear, prefMonth] = pref?.split("-") ?? [];
+  const prefCourse = pref ? `${prefYear}년 ${prefMonth}월` : null;
+  const prefPreset = presets.find((p) => p.label === `${prefMonth}월 개강`);
+  const noParams = !["ts", "te", "ss", "se", "course"].some((k) => params[k] !== undefined);
+  const base: Settings =
+    noParams && prefCourse && prefPreset && courses.includes(prefCourse)
+      ? { tachatStart: prefPreset.tachatStart, tachatEnd: prefPreset.tachatEnd, sangyeStart: prefPreset.sangyeStart, sangyeEnd: prefPreset.sangyeEnd, course: prefCourse }
+      : defaults;
   const settings: Settings = {
-    tachatStart: isDate(params.ts) ? params.ts : defaults.tachatStart,
-    tachatEnd: isDate(params.te) ? params.te : defaults.tachatEnd,
-    sangyeStart: isDate(params.ss) ? params.ss : defaults.sangyeStart,
-    sangyeEnd: isDate(params.se) ? params.se : defaults.sangyeEnd,
-    course: typeof params.course === "string" && courses.includes(params.course) ? params.course : defaults.course,
+    tachatStart: isDate(params.ts) ? params.ts : base.tachatStart,
+    tachatEnd: isDate(params.te) ? params.te : base.tachatEnd,
+    sangyeStart: isDate(params.ss) ? params.ss : base.sangyeStart,
+    sangyeEnd: isDate(params.se) ? params.se : base.sangyeEnd,
+    course: typeof params.course === "string" && courses.includes(params.course) ? params.course : base.course,
   };
   // 선택한 탭: "all" 또는 팀 번호
   const tab = TEAMS.find((t) => String(t.id) === params.team)?.id ?? "all";
@@ -94,7 +105,10 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
               {p.label}
             </Chip>
           ))}
-          <Link href={tab === "all" ? "/" : { query: { team: tab } }} className="ml-auto text-muted underline-offset-2 hover:underline">
+          <Link
+            href={{ query: { ts: defaults.tachatStart, te: defaults.tachatEnd, ss: defaults.sangyeStart, se: defaults.sangyeEnd, course: defaults.course, ...(tab !== "all" && { team: tab }) } }}
+            className="ml-auto text-muted underline-offset-2 hover:underline"
+          >
             시트 설정값으로 되돌리기
           </Link>
         </div>

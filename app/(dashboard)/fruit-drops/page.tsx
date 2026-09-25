@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { ReasonBars } from "@/components/ReasonBars";
 import { ReasonHeatmap } from "@/components/ReasonHeatmap";
 import { StackedShare } from "@/components/StackedShare";
+import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import { countDrops, getFruitDropData, REACHED_LABEL, STAGE_ORDER, stageBreakdown, STAGES, type StageFilter } from "@/lib/fruit-drops";
 
@@ -17,7 +18,8 @@ export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit
   const { reasons, courses } = await getFruitDropData();
 
   // 개강 하나 또는 전체 (?c=43-9|all), 탈락 단계 (?s=all|sangye|jeongpa|sangdam|yukye|yuk)
-  const courseId = params.c === "all" ? "all" : (courses.find((c) => c.id === params.c) ?? courses.at(-1))?.id;
+  const pref = await preferredCourse();
+  const courseId = params.c === "all" ? "all" : (courses.find((c) => c.id === params.c) ?? courses.find((c) => c.id === pref) ?? courses.at(-1))?.id;
   const course = courses.find((c) => c.id === courseId);
   const stage: StageFilter = isStage(params.s) ? params.s : "all";
   const courseLabel = courseId === "all" ? "43년 전체" : (course?.label ?? "");

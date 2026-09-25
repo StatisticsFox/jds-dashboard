@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { LineChart } from "@/components/LineChart";
 import { RefreshBar } from "@/components/RefreshBar";
 import { TEAMS } from "@/lib/conversion";
+import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import { dataFetchedAt } from "@/lib/data-time";
 import { formatCount } from "@/lib/format";
@@ -21,7 +22,8 @@ export default async function GoalsPage({ searchParams }: PageProps<"/goals">) {
 
   // 개강 (?c=43-9). 없으면 실적(타찾)이 있는 가장 최근 개강
   const withData = courseIds.filter((c) => weeksOf(actuals, c, "tachat").size > 0);
-  const courseId = courseIds.find((c) => c === params.c) ?? withData.at(-1) ?? courseIds.at(-1) ?? "";
+  const pref = await preferredCourse();
+  const courseId = courseIds.find((c) => c === params.c) ?? courseIds.find((c) => c === pref) ?? withData.at(-1) ?? courseIds.at(-1) ?? "";
   const [year, month] = courseId.split("-");
   const courseName = `${year}년 ${month}월 개강`;
   // 그래프에 볼 팀 (?t=1~7, 없으면 지역 전체)

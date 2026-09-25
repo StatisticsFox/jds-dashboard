@@ -421,3 +421,59 @@ body {
     display: none;
   }
 }
+
+/* ── 누른 뒤 기다리는 동안 반응 (components/Pending.tsx) ───────── */
+.pending-area {
+  transition: opacity 0.2s;
+}
+/* 0.15초 넘게 걸릴 때만 흐리게 (빠르면 깜빡임 없음) */
+.pending-area[data-pending] {
+  opacity: 0.55;
+  transition: opacity 0.25s 0.15s;
+}
+.pending-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 2px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--accent) 20%, transparent);
+}
+.pending-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: var(--accent);
+  animation: pending-slide 1s ease-in-out infinite;
+}
+@keyframes pending-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+.pending-spin {
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  margin-left: 0.25em;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  opacity: 0.7;
+  animation: pending-rotate 0.7s linear infinite;
+}
+@keyframes pending-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pending-bar::after,
+  .pending-spin {
+    animation-duration: 2s;
+  }
+}

@@ -1,6 +1,6 @@
-import Link from "next/link";
+import { PendingLink } from "@/components/Pending";
 
-type LinkHref = React.ComponentProps<typeof Link>["href"];
+type LinkHref = React.ComponentProps<typeof PendingLink>["href"];
 
 const base = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-sm transition-colors";
 const on = "border-accent bg-accent-soft font-semibold text-accent-strong";
@@ -35,11 +35,11 @@ export function Chip({
     );
   }
   return (
-    <Link href={href} scroll={false} aria-current={active ? "true" : undefined} aria-pressed={multi ? active : undefined} title={title} className={`${base} ${active ? on : off}`}>
+    <PendingLink href={href} aria-current={active ? "true" : undefined} aria-pressed={multi ? active : undefined} title={title} className={`${base} ${active ? on : off}`}>
       {multi && active && <span aria-hidden>✓</span>}
       {dot && active && <span className="h-2 w-2 rounded-full" style={{ background: dot }} aria-hidden />}
       {children}
-    </Link>
+    </PendingLink>
   );
 }
 
