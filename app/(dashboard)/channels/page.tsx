@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { CaptureArea } from "@/components/CaptureArea";
+import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
 import { DonutChart } from "@/components/DonutChart";
 import { Mascot, Star } from "@/components/Mascot";
 import { StackedShare } from "@/components/StackedShare";
@@ -15,11 +15,8 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
   const params = await searchParams;
   const { categories, otherMembers, courses } = await getChannelData();
 
-  // 개강 하나 (?c=43-9). 없으면 가장 최근 개강
-  const course = courses.find((c) => c.id === params.c) ?? courses.at(-1);
-  // 주차 하나 (?w=8) 또는 전체 (?w=all). 없으면 그 개강의 가장 최근(작은) 주차
-  const weeks = course ? [...course.weeks.keys()].sort((a, b) => b - a) : [];
-  const week = params.w === "all" ? "all" : (weeks.find((w) => String(w) === params.w) ?? weeks.at(-1));
+  // 개강 하나·주차 하나 (?c=43-9&w=8|all)
+  const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params);
 
   const counts = new Map<string, number>();
   for (const [w, byType] of course?.weeks ?? []) {
@@ -27,7 +24,6 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
     for (const [type, n] of byType) counts.set(type, (counts.get(type) ?? 0) + n);
   }
   const slices = categories.map((label) => ({ label, value: counts.get(label) ?? 0, color: colorOf(categories, label) }));
-  const weekLabel = week === "all" ? "전체 주차" : `${week}주차`;
 
   // 아래 100% 누적 막대: 이 개강의 주차별 비율 (큰 주차부터) + 맨 아래 전체
   const allCounts = new Map<string, number>();
@@ -48,56 +44,7 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
         </div>
       </header>
 
-      <section className="card space-y-5 p-5">
-        <div className="space-y-2.5">
-          <h2 className="flex items-center gap-2 text-xl">
-            <Star size={20} /> 개강
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {courses.map((c) => {
-              const on = c.id === course?.id;
-              // 개강을 바꾸면 같은 주차가 있으면 유지, 없으면 그 개강의 기본 주차
-              const keepWeek = week === "all" || c.weeks.has(week as number) ? String(week) : undefined;
-              return (
-                <Link
-                  key={c.id}
-                  href={{ query: { c: c.id, ...(keepWeek && { w: keepWeek }) } }}
-                  scroll={false}
-                  aria-current={on}
-                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                    on ? "border-transparent bg-accent font-semibold text-accent-ink shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
-                  }`}
-                >
-                  {c.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-        <div className="space-y-2.5 border-t border-grid pt-4">
-          <h2 className="flex items-center gap-2 text-xl">
-            <Star size={20} /> 주차
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {[...weeks.map(String), "all"].map((w) => {
-              const on = String(week) === w;
-              return (
-                <Link
-                  key={w}
-                  href={{ query: { c: course?.id, w } }}
-                  scroll={false}
-                  aria-current={on}
-                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                    on ? "border-transparent bg-accent font-semibold text-accent-ink shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
-                  }`}
-                >
-                  {w === "all" ? "전체" : `${w}주차`}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} />
 
       <CaptureArea className="card space-y-6 p-5" fileName={`섭외유형_${course?.label ?? ""}_${weekLabel}`.replace(/\s/g, "")} caption={caption}>
         <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">

@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/dal";
 
 export const metadata: Metadata = { title: "관리자 · 접속 기록" };
 
-const PAGE_NAMES: Record<string, string> = { "/": "팀별 유월율", "/trend": "열매 추이", "/channels": "섭외유형", "/admin": "관리자", "/login": "로그인" };
+const PAGE_NAMES: Record<string, string> = { "/": "팀별 유월율", "/trend": "열매 추이", "/channels": "섭외유형", "/drops": "타찾 탈락", "/fruit-drops": "열매 탈락", "/admin": "관리자", "/login": "로그인" };
 // 보안상 눈여겨볼 행동은 빨간 칩으로
 const WARN_ACTIONS = new Set(["로그인 실패", "코드 요청(미등록)"]);
 const PAGE_SIZE = 200;

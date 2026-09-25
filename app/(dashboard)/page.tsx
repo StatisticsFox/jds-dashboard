@@ -188,7 +188,7 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
           </CaptureArea>
 
           <CaptureArea className="card p-5" fileName={fileName("전체_수치")} caption={caption}>
-            <SectionTitle sub="팀 평균 달성 개수 대비">수치</SectionTitle>
+            <SectionTitle sub="팀 평균 달성 인원 대비">수치</SectionTitle>
             <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {COUNT_METRICS.map((m) => (
                 <MetricCompare

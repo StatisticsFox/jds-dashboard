@@ -45,7 +45,7 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   const hrefWith = (ids: string[], m: string = metric) => ({ query: { m, year, c: ids.length ? ids : "" } });
   const toggle = (id: string) =>
     selectedIds.has(id) ? [...selectedIds].filter((x) => x !== id) : [...selectedIds, id];
-  const caption = `새빛지역 · ${year}년 · 개강별 동주차 누적 ${metricLabel} 개수 · ${selected.map((c) => c.label).join(", ")}`;
+  const caption = `새빛지역 · ${year}년 · 개강별 동주차 누적 ${metricLabel} 인원 · ${selected.map((c) => c.label).join(", ")}`;
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
@@ -131,7 +131,7 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
 
       <CaptureArea className="card space-y-5 p-5" fileName={`동주차_누적${metricLabel}_${year}년`} caption={caption}>
         <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> 동주차 누적 {metricLabel} 개수 <span className="font-sans text-sm text-muted">{year}년 · 첫 주차부터 그 주차까지 합산</span>
+          <Star size={20} /> 동주차 누적 {metricLabel} 인원 <span className="font-sans text-sm text-muted">{year}년 · 첫 주차부터 그 주차까지 합산</span>
         </h2>
 
         {selected.length === 0 ? (
@@ -191,7 +191,7 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-muted">큰 숫자는 누적 개수, 옆의 +숫자는 그 주차에 새로 늘어난 개수예요. – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고, {metric === "find" ? "찾기 주차(B열)가 빈 행은 세지 않아요." : "비상 탭 주차(A열)가 43년 형식인 행만 세요."}</p>
+            <p className="text-xs text-muted">큰 숫자는 누적 인원, 옆의 +숫자는 그 주차에 새로 늘어난 인원이에요. – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고, {metric === "find" ? "찾기 주차(B열)가 빈 행은 세지 않아요." : "비상 탭 주차(A열)가 43년 형식인 행만 세요."}</p>
           </>
         )}
       </CaptureArea>

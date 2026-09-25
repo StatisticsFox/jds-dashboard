@@ -32,7 +32,7 @@ export function TeamDetail({ team, summary, teamCount }: { team: TeamResult; sum
         })}
       </Card>
 
-      <Card title="수치" subtitle="팀 평균 달성 개수 대비">
+      <Card title="수치" subtitle="팀 평균 달성 인원 대비">
         <Header columns={["수치", "우리 팀", "팀 평균", "팀 평균 대비", "", "순위"]} />
         {COUNT_METRICS.map((m) => {
           const diff = team.counts[m.key] - average[m.key];

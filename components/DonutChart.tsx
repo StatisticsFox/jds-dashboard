@@ -6,11 +6,11 @@ export type Slice = { label: string; value: number; color: string };
 
 // 도넛(가운데 뚫린 원그래프) + 순위 목록.
 // 조각이나 목록에 마우스를 올리면 둘 다 함께 강조되고, 가운데에 그 항목의 개수·비율이 보임
-export function DonutChart({ slices, unit = "개", size = 260 }: { slices: Slice[]; unit?: string; size?: number }) {
+export function DonutChart({ slices, unit = "명", size = 260 }: { slices: Slice[]; unit?: string; size?: number }) {
   const [active, setActive] = useState<string | null>(null);
   const total = slices.reduce((s, d) => s + d.value, 0);
   const shown = slices.filter((d) => d.value > 0);
-  const ranked = slices.filter((d) => d.value > 0).sort((a, b) => b.value - a.value); // 0개는 목록에서 숨김
+  const ranked = slices.filter((d) => d.value > 0).sort((a, b) => b.value - a.value); // 0명은 목록에서 숨김
   const pct = (v: number) => (total ? (v / total) * 100 : 0);
   const current = shown.find((d) => d.label === active);
 

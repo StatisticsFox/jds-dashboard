@@ -16,7 +16,7 @@ const PAD = { top: 16, right: 76, bottom: 30, left: 44 };
 
 // 여러 개강의 추이를 겹쳐 그리는 선 그래프
 // 마우스를 올리면 세로 기준선과 함께 그 주차의 모든 개강 값을 보여줌
-export function LineChart({ xLabels, series, unit = "개", height = 320 }: Props) {
+export function LineChart({ xLabels, series, unit = "명", height = 320 }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
   const [hover, setHover] = useState<number | null>(null);
