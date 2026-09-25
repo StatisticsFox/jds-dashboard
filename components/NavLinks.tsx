@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/channels", label: "섭외유형" },
   { href: "/drops", label: "타찾 탈락" },
   { href: "/fruit-drops", label: "열매 탈락" },
+  { href: "/center", label: "등록 분석" },
 ];
 
 // 상단 메뉴 링크. 지금 보고 있는 페이지는 민트색으로 표시. 관리자에게만 "관리자" 메뉴
