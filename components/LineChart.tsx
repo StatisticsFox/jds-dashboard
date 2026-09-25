@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 // deltas: 그 지점에서 새로 늘어난 값 (누적 그래프일 때 툴팁에 "+N"으로 표시, 선택)
-export type LineSeries = { id: string; label: string; color: string; values: (number | null)[]; deltas?: (number | null)[] };
+// dashed: 목표선처럼 점선으로 그릴 때
+export type LineSeries = { id: string; label: string; color: string; values: (number | null)[]; deltas?: (number | null)[]; dashed?: boolean };
 
 type Props = {
   xLabels: string[]; // 가로축 (예: "10주차", "9주차" …)
@@ -89,10 +90,10 @@ export function LineChart({ xLabels, series, unit = "명", height = 320 }: Props
         {/* 선과 점 */}
         {series.map((s) => (
           <g key={s.id}>
-            <path d={path(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={path(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={s.dashed ? "6 5" : undefined} />
             {s.values.map((v, i) =>
               v === null ? null : (
-                <circle key={i} cx={x(i)} cy={y(v)} r={hover === i ? 5.5 : 4} fill={s.color} stroke="var(--surface)" strokeWidth={2} />
+                <circle key={i} cx={x(i)} cy={y(v)} r={hover === i ? 5.5 : 4} fill={s.dashed ? "var(--surface)" : s.color} stroke={s.dashed ? s.color : "var(--surface)"} strokeWidth={2} />
               ),
             )}
           </g>
