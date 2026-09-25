@@ -144,7 +144,7 @@ export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit
         </h2>
         <ReasonHeatmap reasons={reasons} rows={heatRows} rowLabel="목표 개강" unit="열매" />
         <p className="text-xs text-muted">
-          탈락률의 분모는 고른 단계까지 온 열매예요: 상예 = 상담 예정 이상, 정파 = 정파 단계 이상(상예 탈락 제외), 상담 = 상담 단계 이상(상예·정파 탈락 제외).
+          탈락률의 분모는 고른 단계까지 온 열매예요: 상예 = 상담 예정 이상, 정파 = 정파 단계 이상(상예 탈락 제외), 상담 = 상담 단계 이상(상예·정파 탈락 제외), 육따기 = A열이 육따기로 시작하는 열매(육따기 예정 제외, A열에 탈락이 있으면 탈락).
           탈락 단계는 단계(A열)로 나눠요: 상담 예정 → 상예, 상담 정파 → 정파, 상담 심각·미비·보류 → 상담, 육따기 예정 → 육따기 예정, 육따기 심각·미비 → 육따기.
         </p>
       </CaptureArea>

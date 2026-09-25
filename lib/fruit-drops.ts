@@ -30,7 +30,7 @@ export const REACHED_LABEL: Record<StageFilter, string> = {
   jeongpa: "정파 단계 이상",
   sangdam: "상담 단계 이상",
   yukye: "육따기 예정 단계 이상",
-  yuk: "육따기 단계 이상",
+  yuk: "육따기 열매 (A열 육따기, 예정 제외)",
 };
 
 function stageOf(raw: string): Stage | "find" | null {
@@ -44,7 +44,8 @@ function stageOf(raw: string): Stage | "find" | null {
   return null;
 }
 
-type Fruit = { stage: Stage | null; reason: string };
+// stage: A열로 본 단계(탈락 여부와 관계없이), dropped: A열에 "탈락"이 들어감, reason: R열 탈락 사유
+type Fruit = { stage: Stage | null; dropped: boolean; reason: string };
 export type FruitCourse = { id: string; label: string; order: number; fruits: Fruit[] };
 
 export async function getFruitDropData() {
@@ -69,10 +70,11 @@ export async function getFruitDropData() {
       course = { id, label, order: Number(m[1]) * 100 + order, fruits: [] };
       courses.set(id, course);
     }
-    const stage = stageOf(String(stageCol[0]?.[i] ?? "").trim());
+    const rawStage = String(stageCol[0]?.[i] ?? "").trim();
+    const stage = stageOf(rawStage);
     if (stage === "find") continue; // 찾기 단계는 열매가 아님
     const reason = normalizeReason(reasonCol[0]?.[i]);
-    course.fruits.push({ stage, reason });
+    course.fruits.push({ stage, dropped: rawStage.includes("탈락"), reason });
     if (reason) totals.set(reason, (totals.get(reason) ?? 0) + 1);
   }
 
@@ -92,9 +94,12 @@ export function stageBreakdown(fruits: Fruit[]) {
   return counts;
 }
 
-// 그 단계까지 온 열매인지: 탈락하지 않았거나, 그 단계 또는 그 뒤 단계에서 탈락
-// 예) 정파 단계 이상 = 전체 - 상예 탈락, 상담 단계 이상 = 전체 - 상예 탈락 - 정파 탈락
+// 그 단계까지 온 열매인지
+// - 육따기: A열이 "육따기"로 시작하는 열매 전부 (육따기 예정 제외)
+// - 그 외: 탈락하지 않았거나, 그 단계 또는 그 뒤 단계에서 탈락
+//   예) 정파 단계 이상 = 전체 - 상예 탈락, 상담 단계 이상 = 전체 - 상예 탈락 - 정파 탈락
 function reached(f: Fruit, stage: StageFilter) {
+  if (stage === "yuk") return f.stage === "yuk";
   if (stage === "all" || !f.reason) return true;
   return f.stage !== null && STAGE_ORDER.indexOf(f.stage) >= STAGE_ORDER.indexOf(stage);
 }
@@ -106,6 +111,13 @@ export function countDrops(fruits: Fruit[], stage: StageFilter = "all"): WeekDro
   for (const f of fruits) {
     if (!reached(f, stage)) continue;
     finds++;
+    if (stage === "yuk") {
+      // 육따기: A열에 "탈락"이 들어가면 탈락 (사유가 비어 있으면 '사유 미기재')
+      if (!f.dropped) continue;
+      const r = f.reason || "사유 미기재";
+      reasons.set(r, (reasons.get(r) ?? 0) + 1);
+      continue;
+    }
     if (!f.reason || (stage !== "all" && f.stage !== stage)) continue;
     reasons.set(f.reason, (reasons.get(f.reason) ?? 0) + 1);
   }
