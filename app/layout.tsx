@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { NavBar } from "@/components/NavBar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,17 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <nav className="border-b border-border bg-surface">
-          <div className="mx-auto flex max-w-6xl items-center gap-5 px-4 py-2 text-sm font-medium">
-            <Link href="/">팀별 유월율</Link>
-            <Link href="/trend" className="text-muted hover:text-foreground">
-              열매 추이
-            </Link>
-            <div className="ml-auto">
-              <ThemeToggle />
-            </div>
-          </div>
-        </nav>
+        <NavBar />
         {children}
       </body>
     </html>

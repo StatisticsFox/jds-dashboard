@@ -4,11 +4,13 @@ import { MetricCompare } from "@/components/MetricCompare";
 import { TeamDetail } from "@/components/TeamDetail";
 import { TeamTable } from "@/components/TeamTable";
 import { formatCount, formatCountDiff, formatRate, formatRateDiff } from "@/lib/format";
+import { requireUser } from "@/lib/dal";
 import { COUNT_METRICS, getConversionData, RATE_METRICS, summarize, TEAMS, toRates, type Settings } from "@/lib/conversion";
 
 const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export default async function ConversionPage({ searchParams }: PageProps<"/">) {
+  await requireUser();
   const params = await searchParams;
   const { defaults, presets, courses, count } = await getConversionData();
 

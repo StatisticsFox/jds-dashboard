@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart } from "@/components/BarChart";
 import { ColumnChart } from "@/components/ColumnChart";
 import { countByMonth, countByTeam, dateBounds, filterByDate } from "@/lib/metrics";
+import { requireUser } from "@/lib/dal";
 import { getFruits, STAGES, type Stage } from "@/lib/sheets";
 
 const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -15,6 +16,7 @@ function twelveMonthsBefore(date: string) {
 }
 
 export default async function Home({ searchParams }: PageProps<"/">) {
+  await requireUser();
   const params = await searchParams;
   const stage = isStage(params.stage) ? params.stage : "tachat";
   const config = STAGES[stage];

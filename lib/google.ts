@@ -12,11 +12,11 @@ const auth = new JWT({
   scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
 });
 
-async function sheetsGet<T>(spreadsheetId: string, path: string): Promise<T> {
+async function sheetsGet<T>(spreadsheetId: string, path: string, revalidate = REVALIDATE_SECONDS): Promise<T> {
   const { token } = await auth.getAccessToken();
   const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/${path}`, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: REVALIDATE_SECONDS },
+    next: { revalidate },
   });
   if (!res.ok) {
     throw new Error(`스프레드시트 읽기 실패 (${res.status}): ${await res.text()}`);
@@ -24,9 +24,9 @@ async function sheetsGet<T>(spreadsheetId: string, path: string): Promise<T> {
   return res.json();
 }
 
-// 한 범위를 화면에 보이는 글자 그대로(행 단위) 읽기
-export async function readValues(spreadsheetId: string, range: string): Promise<string[][]> {
-  const data = await sheetsGet<{ values?: string[][] }>(spreadsheetId, `values/${encodeURIComponent(range)}`);
+// 한 범위를 화면에 보이는 글자 그대로(행 단위) 읽기. revalidate: 캐시 유지 시간(초)
+export async function readValues(spreadsheetId: string, range: string, revalidate?: number): Promise<string[][]> {
+  const data = await sheetsGet<{ values?: string[][] }>(spreadsheetId, `values/${encodeURIComponent(range)}`, revalidate);
   return data.values ?? [];
 }
 
