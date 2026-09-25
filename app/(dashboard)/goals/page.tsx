@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { CaptureArea } from "@/components/CaptureArea";
+import { Chip, ChipRow } from "@/components/Chip";
+import { PageHeader } from "@/components/PageHeader";
 import { LineChart } from "@/components/LineChart";
-import { Mascot, Star } from "@/components/Mascot";
 import { RefreshBar } from "@/components/RefreshBar";
 import { TEAMS } from "@/lib/conversion";
 import { requireUser } from "@/lib/dal";
@@ -9,10 +9,6 @@ import { dataFetchedAt } from "@/lib/data-time";
 import { formatCount } from "@/lib/format";
 import { cumulativeTo, getGoalData, STAGES, TEAM_IDS, targetOf, weeksOf, type GoalStage } from "@/lib/goals";
 
-const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm transition-colors ${
-    on ? "border-transparent bg-accent font-semibold text-accent-ink shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
-  }`;
 
 // missing: 실적 자료 자체가 아직 없음 (예: 센터등록 자료에 아직 없는 개강)
 // missing: 실적 자료 자체가 아직 없음 (예: 센터등록 자료에 아직 없는 개강)
@@ -74,34 +70,26 @@ export default async function GoalsPage({ searchParams }: PageProps<"/goals">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">목표 달성</h1>
-          <p className="mt-0.5 text-sm text-muted">개강·팀별로 단계 목표를 얼마나 채웠는지 봐요</p>
-        </div>
-        <div className="ml-auto">
-          <RefreshBar at={dataFetchedAt()} />
-        </div>
-      </header>
+      <PageHeader
+        title="목표 달성"
+        description={<>개강·팀별로 단계 목표를 얼마나 채웠는지 봐요</>}
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
-      <section className="card space-y-2.5 p-5">
-        <h2 className="flex items-center gap-2 text-xl">
-          <Star size={20} /> 개강
-        </h2>
-        <div className="flex flex-wrap gap-2">
+      <section className="card p-5">
+        <ChipRow label="43년 개강">
           {courseIds.map((c) => (
-            <Link key={c} href={{ query: { c, ...(chartTeam && { t: chartTeam }) } }} scroll={false} className={chip(c === courseId)}>
-              {c.replace(/^(\d+)-(.+)$/, "$1년 $2월")}
-            </Link>
+            <Chip key={c} href={{ query: { c, ...(chartTeam && { t: chartTeam }) } }} active={c === courseId}>
+              {c.split("-")[1]}월
+            </Chip>
           ))}
-        </div>
+        </ChipRow>
       </section>
 
       <CaptureArea className="card space-y-4 p-5" fileName={`목표달성_${courseName}`.replace(/\s/g, "")} caption={`새빛지역 · ${courseName} · 목표 대비 달성률${currentWeek ? ` (${currentWeek}주차 기준)` : ""}`}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> {courseName} 달성률
-          <span className="font-sans text-sm text-muted">
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          {courseName} 달성률
+          <span className="text-xs font-normal text-muted">
             {currentWeek ? `실적은 ${currentWeek}주차까지 누적 · 목표는 단계별 지정 열 (타찾 J · 상담예정 N · 상담 S · 육따기 V · 센터등록 AB)` : "아직 실적이 없어요"}
           </span>
         </h2>
@@ -141,19 +129,19 @@ export default async function GoalsPage({ searchParams }: PageProps<"/goals">) {
 
       {/* 목표선 그래프 */}
       <CaptureArea className="card space-y-4 p-5" fileName={`목표선_${courseName}_${chartWho}`.replace(/\s/g, "")} caption={`새빛지역 · ${courseName} · ${chartWho} · 주차별 목표 대비 실적`}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> 주차별 진행 <span className="font-sans text-sm text-muted">점선 = 목표 (타찾 J열 · 상담 S열), 실선 = 실제 누적</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          주차별 진행 <span className="text-xs font-normal text-muted">점선 = 목표 (타찾 J열 · 상담 S열), 실선 = 실제 누적</span>
         </h2>
-        <div className="flex flex-wrap gap-1.5">
-          <Link href={{ query: { c: courseId } }} scroll={false} className={`${chip(!chartTeam)} !px-2.5 !py-1 !text-xs`}>
+        <ChipRow label="팀">
+          <Chip href={{ query: { c: courseId } }} active={!chartTeam}>
             지역 전체
-          </Link>
+          </Chip>
           {TEAMS.map((t) => (
-            <Link key={t.id} href={href({ t: t.id })} scroll={false} className={`${chip(chartTeam === t.id)} !px-2.5 !py-1 !text-xs`}>
+            <Chip key={t.id} href={href({ t: t.id })} active={chartTeam === t.id}>
               {t.emoji} {t.label}
-            </Link>
+            </Chip>
           ))}
-        </div>
+        </ChipRow>
         <div className="grid gap-4 lg:grid-cols-2">
           {(["tachat", "sangdam"] as const).map((st) => {
             const { weeks, series } = lineFor(st);

@@ -1,9 +1,9 @@
 import { CaptureArea } from "@/components/CaptureArea";
+import { PageHeader } from "@/components/PageHeader";
 import { RefreshBar } from "@/components/RefreshBar";
 import { dataFetchedAt } from "@/lib/data-time";
 import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
 import { DonutChart } from "@/components/DonutChart";
-import { Mascot, Star } from "@/components/Mascot";
 import { StackedShare } from "@/components/StackedShare";
 import { getChannelData, OTHER } from "@/lib/channels";
 import { requireUser } from "@/lib/dal";
@@ -38,23 +38,17 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">섭외유형 비교</h1>
-          <p className="mt-0.5 text-sm text-muted">개강 하나, 주차 하나를 골라 찾기가 어떤 섭외유형으로 이루어졌는지 봐요</p>
-        </div>
-        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
-        <div className="ml-auto">
-          <RefreshBar at={dataFetchedAt()} />
-        </div>
-      </header>
+      <PageHeader
+        title="섭외유형 비교"
+        description={<>개강 하나, 주차 하나를 골라 찾기가 어떤 섭외유형으로 이루어졌는지 봐요</>}
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
       <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} />
 
       <CaptureArea className="card space-y-6 p-5" fileName={`섭외유형_${course?.label ?? ""}_${weekLabel}`.replace(/\s/g, "")} caption={caption}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> {course?.label} · {weekLabel} <span className="font-sans text-sm text-muted">섭외유형별 찾기 수</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          {course?.label} · {weekLabel} <span className="text-xs font-normal text-muted">섭외유형별 찾기 수</span>
         </h2>
         {counts.size === 0 ? (
           <p className="py-16 text-center text-sm text-muted">이 개강·주차에는 찾기 데이터가 없어요.</p>
@@ -73,8 +67,8 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
           fileName={`섭외유형_주차별비율_${course.label}`.replace(/\s/g, "")}
           caption={`새빛지역 · 43년 ${course.label} · 주차별 섭외유형 비율`}
         >
-          <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-            <Star size={20} /> {course.label} 주차별 비율 <span className="font-sans text-sm text-muted">주차마다 섭외유형 구성이 어떻게 바뀌는지 · 줄을 누르면 위 도넛이 그 주차로 바뀌어요</span>
+          <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+            {course.label} 주차별 비율 <span className="text-xs font-normal text-muted">주차마다 섭외유형 구성이 어떻게 바뀌는지 · 줄을 누르면 위 도넛이 그 주차로 바뀌어요</span>
           </h2>
           <StackedShare categories={categories.map((label) => ({ label, color: colorOf(categories, label) }))} rows={shareRows} />
         </CaptureArea>

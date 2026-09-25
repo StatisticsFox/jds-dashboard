@@ -2,8 +2,9 @@ import Link from "next/link";
 import { RefreshBar } from "@/components/RefreshBar";
 import { dataFetchedAt } from "@/lib/data-time";
 import { CaptureArea } from "@/components/CaptureArea";
+import { Chip, ChipRow } from "@/components/Chip";
+import { PageHeader } from "@/components/PageHeader";
 import { LineChart } from "@/components/LineChart";
-import { Mascot, Star } from "@/components/Mascot";
 import { requireUser } from "@/lib/dal";
 import { getCourses, WEEKLY_METRICS, weeklyTable, type WeeklyMetric } from "@/lib/weekly";
 
@@ -52,78 +53,51 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">개강별 동주차 누적 추이</h1>
-          <p className="mt-0.5 text-sm text-muted">같은 주차끼리 개강을 비교해요 · 주차는 개강에 가까워지는 순서(큰 수 → 작은 수)로 누적돼요</p>
-        </div>
-        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
-        <div className="ml-auto">
-          <RefreshBar at={dataFetchedAt()} />
-        </div>
-      </header>
+      <PageHeader
+        title="열매 추이"
+        description="같은 주차끼리 개강을 비교해요 · 주차는 개강에 가까워지는 순서(큰 수 → 작은 수)로 누적돼요"
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
-      {/* 지표 선택 */}
-      <nav className="flex w-max gap-1 rounded-full border border-border bg-surface p-1 text-sm shadow-sm">
-        {METRICS.map((m) => (
-          <Link
-            key={m.key}
-            href={hrefWith([...selectedIds], m.key)}
-            scroll={false}
-            className={`rounded-full px-4 py-1.5 font-medium ${m.key === metric ? "bg-accent text-accent-ink" : "text-muted hover:bg-accent-soft hover:text-foreground"}`}
-          >
-            {m.label}
-          </Link>
-        ))}
-      </nav>
-
-      {/* 개강 선택 (여러 개 가능) */}
-      <section className="card space-y-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-xl">
-            <Star size={20} /> 개강 선택 <span className="font-sans text-sm text-muted">여러 개 고를 수 있어요 (최대 {MAX_SELECTED}개)</span>
-          </h2>
-          {years.length > 1 && (
-            <div className="flex gap-1 text-xs">
-              {years.map((y) => (
-                <Link
-                  key={y}
-                  href={hrefWith([...selectedIds].filter((id) => id.startsWith(`${y}-`)))}
-                  className={`rounded-full px-3 py-1 ${y === year ? "bg-accent-soft font-semibold text-accent-strong" : "text-muted hover:text-foreground"}`}
-                >
-                  {y}년
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
+      {/* 지표 · 개강 선택 */}
+      <section className="card space-y-3 p-5">
+        <ChipRow label="지표">
+          {METRICS.map((m) => (
+            <Chip key={m.key} href={hrefWith([...selectedIds], m.key)} active={m.key === metric}>
+              {m.label}
+            </Chip>
+          ))}
+        </ChipRow>
+        {years.length > 1 && (
+          <ChipRow label="연도" className="border-t border-grid pt-3">
+            {years.map((y) => (
+              <Chip key={y} href={hrefWith([...selectedIds].filter((id) => id.startsWith(`${y}-`)))} active={y === year}>
+                {y}년
+              </Chip>
+            ))}
+          </ChipRow>
+        )}
+        <ChipRow label={`${year}년 개강`} className="border-t border-grid pt-3">
           {yearCourses.map((c) => {
             const on = selectedIds.has(c.id);
-            const index = selected.findIndex((s) => s.id === c.id);
             const full = !on && selectedIds.size >= MAX_SELECTED;
-            return full ? (
-              <span key={c.id} className="rounded-full border border-border px-3 py-1.5 text-sm text-muted/50" title={`최대 ${MAX_SELECTED}개까지 고를 수 있어요`}>
-                {c.label}
-              </span>
-            ) : (
-              <Link
+            return (
+              <Chip
                 key={c.id}
                 href={hrefWith(toggle(c.id))}
-                scroll={false}
-                aria-pressed={on}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                  on ? "border-foreground/20 bg-surface font-semibold shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
-                }`}
+                active={on}
+                multi
+                dot={on ? color(selected.findIndex((s) => s.id === c.id)) : undefined}
+                disabled={full}
+                title={full ? `최대 ${MAX_SELECTED}개까지 고를 수 있어요` : undefined}
               >
-                {on ? <span className="h-2.5 w-2.5 rounded-full" style={{ background: color(index) }} /> : <span className="text-xs">＋</span>}
-                {c.label}
-              </Link>
+                {c.label.replace(" 개강", "")}
+              </Chip>
             );
           })}
-        </div>
-        <div className="flex gap-3 text-xs text-muted">
+        </ChipRow>
+        <div className="flex flex-wrap gap-3 pl-0.5 text-xs text-muted sm:pl-[4.75rem]">
+          <span>여러 개 고를 수 있어요 (최대 {MAX_SELECTED}개)</span>
           <Link href={hrefWith(yearCourses.slice(-DEFAULT_COUNT).map((c) => c.id))} scroll={false} className="hover:text-foreground hover:underline">
             최근 {DEFAULT_COUNT}개
           </Link>
@@ -137,8 +111,8 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
       </section>
 
       <CaptureArea className="card space-y-5 p-5" fileName={`동주차_누적${metricLabel}_${year}년`} caption={caption}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> 동주차 누적 {metricLabel} 인원 <span className="font-sans text-sm text-muted">{year}년 · 첫 주차부터 그 주차까지 합산</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          동주차 누적 {metricLabel} 인원 <span className="text-xs font-normal text-muted">{year}년 · 첫 주차부터 그 주차까지 합산</span>
         </h2>
 
         {selected.length === 0 ? (

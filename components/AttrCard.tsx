@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { DonutChart, type Slice } from "@/components/DonutChart";
-import { Star } from "@/components/Mascot";
 
 type Row = { label: string; count: number };
 
@@ -9,8 +8,8 @@ export function AttrCard({ title, total, rows, note }: { title: string; total: n
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
     <section className="card flex flex-col p-5">
-      <h3 className="flex items-center gap-2 text-lg">
-        <Star size={18} /> {title}
+      <h3 className="text-base">
+        {title}
       </h3>
       {note && <p className="mt-0.5 text-xs text-muted">{note}</p>}
       <ul className="mt-3 space-y-1.5 text-sm tabular-nums">
@@ -41,8 +40,8 @@ export function AttrCard({ title, total, rows, note }: { title: string; total: n
 export function DonutCard({ title, slices }: { title: string; slices: Slice[] }) {
   return (
     <section className="card flex flex-col p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-lg">
-        <Star size={18} /> {title}
+      <h3 className="mb-3 text-base">
+        {title}
       </h3>
       <DonutChart slices={slices} size={170} compact />
     </section>
@@ -53,8 +52,8 @@ export function DonutCard({ title, slices }: { title: string; slices: Slice[] })
 export function MbtiCard({ axes, top, total }: { axes: { a: string; b: string; na: number; nb: number }[]; top: Row[]; total: number }) {
   return (
     <section className="card flex flex-col p-5">
-      <h3 className="flex items-center gap-2 text-lg">
-        <Star size={18} /> MBTI
+      <h3 className="text-base">
+        MBTI
       </h3>
       <ul className="mt-3 space-y-2.5 text-xs tabular-nums">
         {axes.map(({ a, b, na, nb }) => {

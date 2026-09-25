@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { RefreshBar } from "@/components/RefreshBar";
 import { dataFetchedAt } from "@/lib/data-time";
 import { CaptureArea } from "@/components/CaptureArea";
-import { Mascot, Star } from "@/components/Mascot";
+import { Chip, ChipRow } from "@/components/Chip";
+import { PageHeader } from "@/components/PageHeader";
 import { ReasonBars } from "@/components/ReasonBars";
 import { ReasonHeatmap } from "@/components/ReasonHeatmap";
 import { StackedShare } from "@/components/StackedShare";
@@ -10,10 +10,6 @@ import { requireUser } from "@/lib/dal";
 import { countDrops, getFruitDropData, REACHED_LABEL, STAGE_ORDER, stageBreakdown, STAGES, type StageFilter } from "@/lib/fruit-drops";
 
 const isStage = (v: unknown): v is StageFilter => typeof v === "string" && v in STAGES;
-const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm transition-colors ${
-    on ? "border-transparent bg-accent font-semibold text-accent-ink shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
-  }`;
 
 export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit-drops">) {
   await requireUser();
@@ -53,49 +49,33 @@ export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">열매 탈락사유 비교</h1>
-          <p className="mt-0.5 text-sm text-muted">상담 예정 이상 열매가 목표 개강까지 가는 동안 어떤 사유로 탈락했는지 봐요</p>
-        </div>
-        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
-        <div className="ml-auto">
-          <RefreshBar at={dataFetchedAt()} />
-        </div>
-      </header>
+      <PageHeader
+        title="열매 탈락사유 비교"
+        description={<>상담 예정 이상 열매가 목표 개강까지 가는 동안 어떤 사유로 탈락했는지 봐요</>}
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
-      <section className="card space-y-5 p-5">
-        <div className="space-y-2.5">
-          <h2 className="flex items-center gap-2 text-xl">
-            <Star size={20} /> 목표 개강
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {courses.map((c) => (
-              <Link key={c.id} href={href({ c: c.id })} scroll={false} aria-current={courseId === c.id} className={chip(courseId === c.id)}>
-                {c.label}
-              </Link>
-            ))}
-            <Link href={href({ c: "all" })} scroll={false} aria-current={courseId === "all"} className={chip(courseId === "all")}>
-              43년 전체
-            </Link>
-          </div>
-        </div>
-        <div className="space-y-2.5 border-t border-grid pt-4">
-          <h2 className="flex items-center gap-2 text-xl">
-            <Star size={20} /> 탈락 단계 <span className="font-sans text-sm text-muted">진행 순서 · 숫자는 그 단계에서 탈락한 열매 수</span>
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {(["all", ...STAGE_ORDER] as StageFilter[]).map((s) => {
-              const n = s === "all" ? allDropped : (stageCounts.get(STAGES[s]) ?? 0);
-              return (
-                <Link key={s} href={href({ s })} scroll={false} aria-current={stage === s} className={chip(stage === s)}>
-                  {STAGES[s]} <span className={stage === s ? "opacity-70" : "text-muted/70"}>{n}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+      <section className="card space-y-3 p-5">
+        <ChipRow label="목표 개강">
+          {courses.map((c) => (
+            <Chip key={c.id} href={href({ c: c.id })} active={courseId === c.id}>
+              {c.label.replace(" 개강", "")}
+            </Chip>
+          ))}
+          <Chip href={href({ c: "all" })} active={courseId === "all"}>
+            43년 전체
+          </Chip>
+        </ChipRow>
+        <ChipRow label="탈락 단계" className="border-t border-grid pt-3">
+          {(["all", ...STAGE_ORDER] as StageFilter[]).map((s) => {
+            const n = s === "all" ? allDropped : (stageCounts.get(STAGES[s]) ?? 0);
+            return (
+              <Chip key={s} href={href({ s })} active={stage === s} title="그 단계에서 탈락한 열매 수">
+                {STAGES[s]} <span className="font-normal opacity-60">{n}</span>
+              </Chip>
+            );
+          })}
+        </ChipRow>
       </section>
 
       {/* 요약 */}
@@ -115,9 +95,9 @@ export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit
       </section>
 
       <CaptureArea className="card space-y-5 p-5" fileName="열매_단계별탈락분포" caption="새빛지역 · 상담 예정 이상 열매 · 목표 개강별 탈락 단계 분포">
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> 단계별 탈락 분포
-          <span className="font-sans text-sm text-muted">개강마다 탈락한 열매가 어느 단계에서 빠졌는지 (100% = 탈락 인원) · 줄을 누르면 그 개강으로 바뀌어요</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          단계별 탈락 분포
+          <span className="text-xs font-normal text-muted">개강마다 탈락한 열매가 어느 단계에서 빠졌는지 (100% = 탈락 인원) · 줄을 누르면 그 개강으로 바뀌어요</span>
         </h2>
         <StackedShare categories={stageCategories} rows={stageRows} rowLabel="목표 개강" />
         {firstJeongpa && (
@@ -132,9 +112,9 @@ export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit
         fileName={`열매탈락사유_${courseLabel}${stageLabel}`.replace(/[\s·]/g, "")}
         caption={`새빛지역 · 상담 예정 이상 열매 · 목표 ${courseLabel}${stageLabel} · 탈락 사유`}
       >
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> {courseLabel}
-          {stageLabel} <span className="font-sans text-sm text-muted">탈락 사유 순위 · 비율은 탈락한 열매 중</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          {courseLabel}
+          {stageLabel} <span className="text-xs font-normal text-muted">탈락 사유 순위 · 비율은 탈락한 열매 중</span>
         </h2>
         {dropped === 0 ? (
           <p className="py-12 text-center text-sm text-muted">이 조건에는 탈락 기록이 없어요.</p>
@@ -144,9 +124,9 @@ export default async function FruitDropsPage({ searchParams }: PageProps<"/fruit
       </CaptureArea>
 
       <CaptureArea className="card space-y-4 p-5" fileName={`열매탈락사유_개강별${stageLabel}`.replace(/[\s·]/g, "")} caption={`새빛지역 · 상담 예정 이상 열매 · 목표 개강별 탈락 사유 비율${stageLabel}`}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> 목표 개강별 비교
-          <span className="font-sans text-sm text-muted">칸 = 그 개강 탈락 중 사유 비율 · 진할수록 높음 · 개강을 누르면 위 순위가 바뀌어요</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          목표 개강별 비교
+          <span className="text-xs font-normal text-muted">칸 = 그 개강 탈락 중 사유 비율 · 진할수록 높음 · 개강을 누르면 위 순위가 바뀌어요</span>
         </h2>
         <ReasonHeatmap reasons={reasons} rows={heatRows} rowLabel="목표 개강" unit="열매" />
         <p className="text-xs text-muted">
@@ -162,7 +142,7 @@ function Stat({ label, value, sub, small }: { label: string; value: string; sub?
   return (
     <div className="card p-4">
       <div className="text-xs text-muted">{label}</div>
-      <div className={`mt-1 truncate font-cute ${small ? "text-2xl" : "text-4xl"}`} title={value}>
+      <div className={`mt-1 truncate font-cute ${small ? "text-xl" : "text-3xl"} tabular-nums`} title={value}>
         {value}
       </div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}

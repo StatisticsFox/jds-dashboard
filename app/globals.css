@@ -42,6 +42,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-cute: var(--font-jua);
+  --font-logo: var(--font-jua);
 }
 
 /* 다크 모드: 사용자가 직접 고르면 <html data-theme="dark|light">, 안 고르면 기기 설정을 따름 */
@@ -80,26 +81,26 @@
   --bad: #e66767;
 }
 
-/* ── 대시보드 안쪽(로그인 후)만: 캐릭터 '총총' 테마 ──────────────
-   민트 귀 · 하얀 얼굴 · 노란 별(주황 테두리) · 갈색 눈 */
-.theme-cute {
-  --background: #f3faf5;
-  --foreground: #17231c;
+/* ── 대시보드 안쪽(로그인 후)만: 차분한 업무용 테마 ──────────────
+   중립 배경 + 짙은 초록 강조 한 가지, 글꼴은 Pretendard (로그인 화면에는 적용 안 됨) */
+.app-theme {
+  --background: #f6f7f6;
+  --foreground: #121614;
   --surface: #ffffff;
-  --muted: #5a6d62;
-  --border: #d7ede0;
-  --grid: #e8f4ec;
-  --accent: #45ef93;
-  --accent-ink: #0b3a22;
-  --accent-soft: #e2f8eb;
-  --accent-strong: #11894b;
-  --star: #ffe58a;
-  --star-edge: #f5a04a;
+  --muted: #5f6b66;
+  --border: #e2e7e4;
+  --grid: #eef1ef;
+  --accent: #178a55; /* 버튼·선택 상태 */
+  --accent-ink: #ffffff; /* 강조색 위 글자 */
+  --accent-soft: #e9f5ef; /* 옅은 강조 배경 */
+  --accent-strong: #11704a; /* 흰 배경 위 강조 글자 */
+  --star: #f2c94c;
+  --star-edge: #d9a31a;
   --cocoa: #a8603f;
-  --series-1: #17a35f;
+  --series-1: #1f9d63;
   --good: #15a052;
   --bad: #e5484d;
-  --shadow: 0 1px 2px rgb(23 35 28 / 0.04), 0 10px 30px -18px rgb(17 137 75 / 0.35);
+  --shadow: 0 1px 2px rgb(18 22 20 / 0.04);
   /* 개강별 선 색: 순서 고정 범주 팔레트 (색각 이상 대비 검증된 순서) */
   --cat-1: #2a78d6;
   --cat-2: #eb6834;
@@ -111,22 +112,21 @@
   --cat-8: #e34948;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-cute {
-    --background: #0d1611;
-    --foreground: #eefcf3;
-    --surface: #15211a;
-    --muted: #a3bdad;
-    --border: #243a2d;
-    --grid: #1c2d23;
-    --accent-ink: #062414;
-    --accent-soft: #183526;
-    --accent-strong: #5ff3a5;
-    --star: #ffe07a;
-    --cocoa: #e0a07f;
-    --series-1: #45ef93;
+  :root:not([data-theme="light"]) .app-theme {
+    --background: #0e1110;
+    --foreground: #eef2f0;
+    --surface: #161a19;
+    --muted: #9aa6a0;
+    --border: #262c2a;
+    --grid: #1e2422;
+    --accent: #3fbf82;
+    --accent-ink: #07140e;
+    --accent-soft: #16271f;
+    --accent-strong: #5fd39b;
+    --series-1: #3fbf82;
     --good: #3ddc7e;
     --bad: #ff6b6f;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -20px rgb(0 0 0 / 0.8);
+    --shadow: none;
     --cat-1: #3987e5;
     --cat-2: #d95926;
     --cat-3: #199e70;
@@ -137,22 +137,21 @@
     --cat-8: #e66767;
   }
 }
-:root[data-theme="dark"] .theme-cute {
-  --background: #0d1611;
-  --foreground: #eefcf3;
-  --surface: #15211a;
-  --muted: #a3bdad;
-  --border: #243a2d;
-  --grid: #1c2d23;
-  --accent-ink: #062414;
-  --accent-soft: #183526;
-  --accent-strong: #5ff3a5;
-  --star: #ffe07a;
-  --cocoa: #e0a07f;
-  --series-1: #45ef93;
+:root[data-theme="dark"] .app-theme {
+  --background: #0e1110;
+  --foreground: #eef2f0;
+  --surface: #161a19;
+  --muted: #9aa6a0;
+  --border: #262c2a;
+  --grid: #1e2422;
+  --accent: #3fbf82;
+  --accent-ink: #07140e;
+  --accent-soft: #16271f;
+  --accent-strong: #5fd39b;
+  --series-1: #3fbf82;
   --good: #3ddc7e;
   --bad: #ff6b6f;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -20px rgb(0 0 0 / 0.8);
+  --shadow: none;
   --cat-1: #3987e5;
   --cat-2: #d95926;
   --cat-3: #199e70;
@@ -163,100 +162,63 @@
   --cat-8: #e66767;
 }
 
-.theme-cute {
-  background:
-    radial-gradient(900px 420px at 8% -8%, var(--accent-soft), transparent 70%),
-    radial-gradient(700px 380px at 105% 12%, color-mix(in oklab, var(--star) 28%, transparent), transparent 70%),
-    var(--background);
-  background-attachment: fixed;
+.app-theme {
+  background: var(--background);
   color: var(--foreground);
+  font-family: "Pretendard Variable", Pretendard, var(--font-geist-sans), "Apple SD Gothic Neo", sans-serif;
+  letter-spacing: -0.005em;
 }
-.theme-cute h1,
-.theme-cute h2,
-.theme-cute h3 {
-  font-family: var(--font-jua), var(--font-geist-sans), sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.01em;
+.app-theme h1,
+.app-theme h2,
+.app-theme h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+/* 큰 숫자(예전 둥근 글꼴 자리)는 같은 글꼴의 굵은 숫자로 */
+.app-theme .font-cute {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 @layer components {
-  /* 둥근 카드 */
+  /* 카드: 작은 모서리 + 얇은 테두리 */
   .card {
-    border-radius: 1.5rem;
+    border-radius: 0.875rem;
     border: 1px solid var(--border);
     background: var(--surface);
     box-shadow: var(--shadow);
   }
   /* 카드 안의 작은 칸 */
   .tile {
-    border-radius: 1.1rem;
-    background: color-mix(in oklab, var(--accent-soft) 70%, var(--surface));
+    border-radius: 0.625rem;
+    background: color-mix(in oklab, var(--background) 70%, var(--surface));
+    border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
   }
-  /* 민트 버튼 */
+  /* 주 버튼 */
   .btn-primary {
-    border-radius: 9999px;
+    border-radius: 0.5rem;
     background: var(--accent);
     color: var(--accent-ink);
     font-weight: 600;
-    box-shadow: 0 2px 0 color-mix(in oklab, var(--accent) 55%, #0b3a22);
-    transition:
-      transform 0.1s,
-      filter 0.15s;
+    transition: filter 0.15s;
   }
   .btn-primary:hover {
-    filter: brightness(1.04);
-  }
-  .btn-primary:active {
-    transform: translateY(1px);
-    box-shadow: none;
+    filter: brightness(1.06);
   }
   .btn-primary:disabled {
     opacity: 0.55;
   }
   /* 입력칸 */
   .field {
-    border-radius: 0.9rem;
-    border: 1.5px solid var(--border);
-    background: var(--background);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
     outline: none;
   }
   .field:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent);
-  }
-}
-
-/* 캐릭터가 살짝 통통 튀는 움직임 (움직임 줄이기 설정이면 멈춤) */
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-2deg);
-  }
-  50% {
-    transform: translateY(-8px) rotate(2deg);
-  }
-}
-@keyframes twinkle {
-  0%,
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(0.8) rotate(12deg);
-    opacity: 0.7;
-  }
-}
-.animate-bob {
-  animation: bob 3.2s ease-in-out infinite;
-}
-.animate-twinkle {
-  animation: twinkle 2.6s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-bob,
-  .animate-twinkle {
-    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent);
   }
 }
 

@@ -1,8 +1,8 @@
 import { CaptureArea } from "@/components/CaptureArea";
+import { PageHeader } from "@/components/PageHeader";
 import { RefreshBar } from "@/components/RefreshBar";
 import { dataFetchedAt } from "@/lib/data-time";
 import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
-import { Mascot, Star } from "@/components/Mascot";
 import { ReasonBars } from "@/components/ReasonBars";
 import { ReasonHeatmap } from "@/components/ReasonHeatmap";
 import { requireUser } from "@/lib/dal";
@@ -29,17 +29,11 @@ export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">타찾 탈락사유 비교</h1>
-          <p className="mt-0.5 text-sm text-muted">개강 하나, 주차 하나를 골라 찾기가 어떤 사유로 탈락했는지 봐요</p>
-        </div>
-        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
-        <div className="ml-auto">
-          <RefreshBar at={dataFetchedAt()} />
-        </div>
-      </header>
+      <PageHeader
+        title="타찾 탈락사유 비교"
+        description={<>개강 하나, 주차 하나를 골라 찾기가 어떤 사유로 탈락했는지 봐요</>}
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
       <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} />
 
@@ -52,17 +46,17 @@ export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
       </section>
 
       <CaptureArea className="card space-y-5 p-5" fileName={`${fileBase}_${weekLabel}`.replace(/\s/g, "")} caption={`${captionBase} · ${weekLabel} · 탈락 사유`}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> {course?.label} · {weekLabel} <span className="font-sans text-sm text-muted">탈락 사유 순위 · 비율은 탈락 사유가 적힌 찾기 중</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          {course?.label} · {weekLabel} <span className="text-xs font-normal text-muted">탈락 사유 순위 · 비율은 탈락 사유가 적힌 찾기 중</span>
         </h2>
         {dropped === 0 ? <p className="py-12 text-center text-sm text-muted">이 개강·주차에는 탈락 사유 기록이 없어요.</p> : <ReasonBars rows={reasons.map((r) => ({ label: r, count: current.reasons.get(r) ?? 0 }))} />}
       </CaptureArea>
 
       {course && weeks.length > 0 && (
         <CaptureArea className="card space-y-4 p-5" fileName={`${fileBase}_주차별`} caption={`${captionBase} · 주차별 탈락 사유 비율`}>
-          <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-            <Star size={20} /> {course.label} 주차별 비교
-            <span className="font-sans text-sm text-muted">칸 = 그 주차 탈락 중 사유 비율 · 진할수록 높음 · 주차를 누르면 위 순위가 바뀌어요</span>
+          <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+            {course.label} 주차별 비교
+            <span className="text-xs font-normal text-muted">칸 = 그 주차 탈락 중 사유 비율 · 진할수록 높음 · 주차를 누르면 위 순위가 바뀌어요</span>
           </h2>
           <ReasonHeatmap reasons={reasons} rows={heatRows} />
           <p className="text-xs text-muted">
@@ -78,7 +72,7 @@ function Stat({ label, value, sub, small }: { label: string; value: string; sub?
   return (
     <div className="card p-4">
       <div className="text-xs text-muted">{label}</div>
-      <div className={`mt-1 truncate font-cute ${small ? "text-2xl" : "text-4xl"}`} title={value}>
+      <div className={`mt-1 truncate font-cute ${small ? "text-xl" : "text-3xl"} tabular-nums`} title={value}>
         {value}
       </div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}

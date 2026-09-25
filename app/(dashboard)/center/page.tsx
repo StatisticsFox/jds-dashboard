@@ -1,16 +1,12 @@
-import Link from "next/link";
 import { RefreshBar } from "@/components/RefreshBar";
 import { dataFetchedAt } from "@/lib/data-time";
 import { AttrCard, CompareTable, DonutCard, MbtiCard } from "@/components/AttrCard";
 import { CaptureArea } from "@/components/CaptureArea";
-import { Mascot, Star } from "@/components/Mascot";
+import { Chip, ChipRow } from "@/components/Chip";
+import { PageHeader } from "@/components/PageHeader";
 import { ATTRS, getCenterData, mbtiAxes, orderValues, tally, type AttrKey, type Person } from "@/lib/center";
 import { requireUser } from "@/lib/dal";
 
-const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm transition-colors ${
-    on ? "border-transparent bg-accent font-semibold text-accent-ink shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
-  }`;
 const isAttr = (v: unknown): v is AttrKey => typeof v === "string" && ATTRS.some((a) => a.key === v);
 
 // 원그래프로 볼 항목과 색. 섭외유형은 '섭외유형' 탭과 같은 색 순서(노방 파랑, 소모임/동아리 주황 …)
@@ -75,44 +71,33 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">등록 열매 분석</h1>
-          <p className="mt-0.5 text-sm text-muted">개강마다 센터에 등록한 열매가 어떤 특징을 가졌는지 봐요</p>
-        </div>
-        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
-        <div className="ml-auto">
-          <RefreshBar at={dataFetchedAt()} />
-        </div>
-      </header>
+      <PageHeader
+        title="등록 열매 분석"
+        description={<>개강마다 센터에 등록한 열매가 어떤 특징을 가졌는지 봐요</>}
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
       {/* 개강 선택: 연도별 한 줄 */}
-      <section className="card space-y-4 p-5">
-        {years.map((y) => (
-          <div key={y} className="space-y-2.5 border-grid [&:not(:first-child)]:border-t [&:not(:first-child)]:pt-4">
-            <h2 className="flex items-center gap-2 text-xl">
-              <Star size={20} /> {y}년 개강
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {courses
-                .filter((c) => c.year === y)
-                .map((c) => (
-                  <Link key={c.id} href={href({ c: c.id })} scroll={false} aria-current={sel === c.id} className={chip(sel === c.id)}>
-                    {c.label} <span className={sel === c.id ? "opacity-70" : "text-muted/70"}>{c.people.length}</span>
-                  </Link>
-                ))}
-              <Link href={href({ c: `y${y}` })} scroll={false} aria-current={sel === `y${y}`} className={chip(sel === `y${y}`)}>
-                {y}년 전체
-              </Link>
-            </div>
-          </div>
+      <section className="card space-y-3 p-5">
+        {years.map((y, i) => (
+          <ChipRow key={y} label={`${y}년 개강`} className={i ? "border-t border-grid pt-3" : ""}>
+            {courses
+              .filter((c) => c.year === y)
+              .map((c) => (
+                <Chip key={c.id} href={href({ c: c.id })} active={sel === c.id} title="등록 인원">
+                  {c.label.replace(" 개강", "")} <span className="font-normal opacity-60">{c.people.length}</span>
+                </Chip>
+              ))}
+            <Chip href={href({ c: `y${y}` })} active={sel === `y${y}`}>
+              {y}년 전체
+            </Chip>
+          </ChipRow>
         ))}
-        <div className="border-t border-grid pt-4">
-          <Link href={href({ c: "all" })} scroll={false} aria-current={sel === "all"} className={chip(sel === "all")}>
+        <ChipRow label="모두" className="border-t border-grid pt-3">
+          <Chip href={href({ c: "all" })} active={sel === "all"}>
             전체 ({allPeople.length}명)
-          </Link>
-        </div>
+          </Chip>
+        </ChipRow>
       </section>
 
       {/* 요약 */}
@@ -128,8 +113,8 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
 
       {/* 항목별 특징 */}
       <CaptureArea className="space-y-4" fileName={`등록열매특징_${selLabel}`.replace(/\s/g, "")} caption={`새빛지역 · 센터 등록 열매 · ${selLabel} (${people.length}명)`}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> {selLabel} 등록 열매의 특징 <span className="font-sans text-sm text-muted">{people.length}명 · 비율은 등록 인원 중</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          {selLabel} 등록 열매의 특징 <span className="text-xs font-normal text-muted">{people.length}명 · 비율은 등록 인원 중</span>
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {ATTRS.map((a) =>
@@ -152,16 +137,16 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
 
       {/* 개강별 비교 */}
       <CaptureArea className="card space-y-4 p-5" fileName={`등록열매_개강별_${compareLabel}`.replace(/[\s/]/g, "")} caption={`새빛지역 · 센터 등록 열매 · 개강별 ${compareLabel} 비교`}>
-        <h2 className="flex flex-wrap items-center gap-2 pr-36 text-xl sm:pr-40">
-          <Star size={20} /> 개강별 비교 <span className="font-sans text-sm text-muted">항목을 고르면 개강끼리 비율을 비교해요 · 칸 = 그 개강 등록 인원 중 %</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
+          개강별 비교 <span className="text-xs font-normal text-muted">항목을 고르면 개강끼리 비율을 비교해요 · 칸 = 그 개강 등록 인원 중 %</span>
         </h2>
-        <div className="flex flex-wrap gap-1.5">
+        <ChipRow label="항목">
           {ATTRS.map((a) => (
-            <Link key={a.key} href={href({ a: a.key })} scroll={false} className={`${chip(compareAttr === a.key)} !px-2.5 !py-1 !text-xs`}>
+            <Chip key={a.key} href={href({ a: a.key })} active={compareAttr === a.key}>
               {a.label}
-            </Link>
+            </Chip>
           ))}
-        </div>
+        </ChipRow>
         <CompareTable values={compareValues} rows={compareRows} />
         <p className="text-xs text-muted">
           개강 이름을 누르면 위 특징이 그 개강으로 바뀌어요. 이름·날짜 등 개인을 알아볼 수 있는 정보는 불러오지 않아요.
@@ -175,7 +160,7 @@ function Stat({ label, value, sub, small }: { label: string; value: string; sub?
   return (
     <div className="card p-4">
       <div className="text-xs text-muted">{label}</div>
-      <div className={`mt-1 truncate font-cute ${small ? "text-2xl" : "text-4xl"}`} title={value}>
+      <div className={`mt-1 truncate font-cute ${small ? "text-xl" : "text-3xl"} tabular-nums`} title={value}>
         {value}
       </div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}

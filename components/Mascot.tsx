@@ -3,7 +3,7 @@
 export function Mascot({ size = 40, className = "" }: { size?: number; className?: string }) {
   return (
     <span
-      className={`inline-block shrink-0 overflow-hidden rounded-full bg-white ring-2 ring-accent/60 ${className}`}
+      className={`inline-block shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-border ${className}`}
       style={{ width: size, height: size }}
     >
       {/* next/image는 서버가 이미지를 대신 받아 오는데, 그때는 로그인 쿠키가 없어서 일반 img 사용 */}

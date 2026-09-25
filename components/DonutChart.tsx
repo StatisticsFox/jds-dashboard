@@ -101,6 +101,8 @@ export function DonutChart({ slices, unit = "명", size = 260, compact = false }
 // 도넛 조각 경로 (바깥 반지름 R, 안쪽 반지름 r, 각도 a0→a1)
 function arc(cx: number, cy: number, R: number, r: number, a0: number, a1: number) {
   const large = a1 - a0 > Math.PI ? 1 : 0;
-  const p = (rad: number, a: number) => `${cx + rad * Math.cos(a)},${cy + rad * Math.sin(a)}`;
+  // 서버와 브라우저의 삼각함수 결과가 소수점 끝자리에서 달라지면 화면 불일치 경고가 나므로 반올림
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+  const p = (rad: number, a: number) => `${r2(cx + rad * Math.cos(a))},${r2(cy + rad * Math.sin(a))}`;
   return `M${p(R, a0)} A${R},${R} 0 ${large} 1 ${p(R, a1)} L${p(r, a1)} A${r},${r} 0 ${large} 0 ${p(r, a0)} Z`;
 }

@@ -2,9 +2,10 @@ import Link from "next/link";
 import { RefreshBar } from "@/components/RefreshBar";
 import { dataFetchedAt } from "@/lib/data-time";
 import { CaptureArea } from "@/components/CaptureArea";
+import { Chip, ChipRow } from "@/components/Chip";
 import { MetricCompare } from "@/components/MetricCompare";
 import { TeamDetail } from "@/components/TeamDetail";
-import { Mascot, Star } from "@/components/Mascot";
+import { PageHeader } from "@/components/PageHeader";
 import { TeamTable } from "@/components/TeamTable";
 import { formatCount, formatCountDiff, formatRate, formatRateDiff } from "@/lib/format";
 import { requireUser } from "@/lib/dal";
@@ -48,33 +49,22 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      {/* 인사 + 현재 기준 */}
-      <header className="card relative flex items-center gap-4 overflow-hidden p-5 sm:p-6">
-        <Mascot size={64} className="animate-bob" />
-        <div className="min-w-0">
-          <p className="text-sm text-muted">{user.name}님, 오늘도 반가워요!</p>
-          <h1 className="mt-0.5 text-2xl sm:text-3xl">새빛지역 팀별 유월율</h1>
-          <p className="mt-2 flex flex-wrap gap-1.5 text-xs">
-            <span className="rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-ink">{settings.course} 개강</span>
-            <span className="rounded-full bg-accent-soft px-2.5 py-1 text-accent-strong">
+      <PageHeader
+        title="팀별 유월율"
+        description={`${user.name}님 · 단계별 전환율을 지역·팀 기준으로 비교해요`}
+        meta={
+          <>
+            <span className="rounded-md bg-accent px-2 py-1 font-semibold text-accent-ink">{settings.course} 개강</span>
+            <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">
               타찾 {settings.tachatStart} ~ {settings.tachatEnd}
             </span>
-            <span className="rounded-full bg-accent-soft px-2.5 py-1 text-accent-strong">
+            <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">
               상예 {settings.sangyeStart} ~ {settings.sangyeEnd}
             </span>
-          </p>
-          <div className="mt-2">
-            <RefreshBar at={dataFetchedAt()} />
-          </div>
-        </div>
-        {/* 별 장식은 넓은 화면에서만 (좁으면 글자와 겹침) */}
-        <span className="absolute right-6 top-5 hidden sm:block">
-          <Star size={26} className="animate-twinkle" />
-        </span>
-        <span className="absolute bottom-6 right-14 hidden sm:block">
-          <Star size={16} className="animate-twinkle [animation-delay:1s]" />
-        </span>
-      </header>
+          </>
+        }
+        right={<RefreshBar at={dataFetchedAt()} />}
+      />
 
       {/* 설정: 제출하면 ?ts=...&te=...&ss=...&se=...&course=... 주소로 이동 */}
       <section className="card p-5">
@@ -94,22 +84,22 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
         </form>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-grid pt-4 text-xs">
-          <span className="flex items-center gap-1 text-muted"><Star size={13} /> 기간 불러오기</span>
+          <span className="mr-1.5 text-xs font-medium text-muted">기간 불러오기</span>
           {presets.map((p) => (
-            <Link
+            <Chip
               key={p.label}
               href={{ query: { ...query, ts: p.tachatStart, te: p.tachatEnd, ss: p.sangyeStart, se: p.sangyeEnd, ...(tab !== "all" && { team: tab }) } }}
-              className="rounded-full border border-border bg-surface px-3 py-1 hover:border-accent hover:bg-accent-soft"
+              active={settings.tachatStart === p.tachatStart && settings.tachatEnd === p.tachatEnd && settings.sangyeStart === p.sangyeStart && settings.sangyeEnd === p.sangyeEnd}
             >
               {p.label}
-            </Link>
+            </Chip>
           ))}
           <Link href={tab === "all" ? "/" : { query: { team: tab } }} className="ml-auto text-muted underline-offset-2 hover:underline">
             시트 설정값으로 되돌리기
           </Link>
         </div>
         {warnings.map((w) => (
-          <p key={w} className="mt-3 rounded-xl bg-star/40 px-3 py-2 text-sm font-medium">
+          <p key={w} className="mt-3 rounded-md border border-star-edge/40 bg-star/20 px-3 py-2 text-sm font-medium">
             ⚠️ {w}
           </p>
         ))}
@@ -124,10 +114,10 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
             return (
               <li key={m.key} className="tile p-3.5" title={m.hint}>
                 <div className="flex items-center gap-1.5 text-xs text-muted">
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-surface text-[10px] font-bold text-accent-strong">{i + 1}</span>
+                  <span className="text-[10px] font-semibold text-muted/70">{String(i + 1).padStart(2, "0")}</span>
                   {m.label}
                 </div>
-                <div className="mt-1.5 font-cute text-4xl">{formatCount(region[m.key])}</div>
+                <div className="mt-1 font-cute text-3xl tabular-nums">{formatCount(region[m.key])}</div>
                 <div className="mt-1 h-4 text-xs text-muted">
                   {rate && (
                     <>
@@ -148,24 +138,17 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
       </CaptureArea>
 
       {/* 탭: 전체 비교 / 팀별 */}
-      <nav className="-mx-4 overflow-x-auto px-4">
-        <div className="flex w-max gap-1 rounded-full border border-border bg-surface p-1 text-sm shadow-sm">
-          {[{ id: "all" as const, label: "전체 비교", emoji: "" }, ...TEAMS].map((t) => (
-            <Link
-              key={t.id}
-              href={{ query: { ...query, ...(t.id !== "all" && { team: t.id }) } }}
-              scroll={false}
-              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 font-medium ${t.id === tab ? "bg-accent text-accent-ink shadow-sm" : "text-muted hover:bg-accent-soft hover:text-foreground"}`}
-            >
-              {t.emoji} {t.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <ChipRow label="보기">
+        {[{ id: "all" as const, label: "전체 비교", emoji: "" }, ...TEAMS].map((t) => (
+          <Chip key={t.id} href={{ query: { ...query, ...(t.id !== "all" && { team: t.id }) } }} active={t.id === tab}>
+            {t.emoji} {t.label}
+          </Chip>
+        ))}
+      </ChipRow>
 
       {selected ? (
         <CaptureArea className="-m-4 space-y-4 p-4" fileName={fileName(`${selected.label}`)} caption={caption}>
-          <h2 className="text-2xl">
+          <h2 className="text-lg">
             {selected.emoji} {selected.label}
           </h2>
           <TeamDetail team={selected} summary={summary} teamCount={teams.length} />
@@ -236,13 +219,12 @@ function DateRange({ label, names, values }: { label: string; names: [string, st
   );
 }
 
-// 카드 제목: 별 + 둥근 글꼴
+// 카드 제목 + 보조 설명
 function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
   return (
-    <h2 className="flex items-center gap-2 text-xl">
-      <Star size={20} />
+    <h2 className="flex flex-wrap items-baseline gap-x-2 text-base">
       {children}
-      {sub && <span className="font-sans text-sm text-muted">{sub}</span>}
+      {sub && <span className="text-xs font-normal text-muted">{sub}</span>}
     </h2>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/PageHeader";
 import Link from "next/link";
-import { Mascot, Star } from "@/components/Mascot";
+import { Chip, ChipRow } from "@/components/Chip";
 import { ACTIONS, getLogs, koreanDate } from "@/lib/access-log";
 import { getAllowedPeople } from "@/lib/allowlist";
 import { requireAdmin } from "@/lib/dal";
@@ -46,13 +47,10 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex items-center gap-3">
-        <Mascot size={48} />
-        <div>
-          <h1 className="text-3xl">관리자 · 접속 기록</h1>
-          <p className="mt-0.5 text-sm text-muted">누가 언제 대시보드에 들어왔는지 봐요 · 관리자({admin.email})만 볼 수 있어요</p>
-        </div>
-      </header>
+      <PageHeader
+        title="관리자 · 접속 기록"
+        description={<>누가 언제 대시보드에 들어왔는지 봐요 · 관리자({admin.email})만 볼 수 있어요</>}
+      />
 
       {!configured && (
         <p className="rounded-2xl bg-star/40 px-4 py-3 text-sm">
@@ -70,8 +68,8 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
       {/* 사람별 마지막 접속 */}
       <section className="card p-5">
-        <h2 className="flex items-center gap-2 text-xl">
-          <Star size={20} /> 사람별 마지막 접속 <span className="font-sans text-sm text-muted">허용 명단 전체</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 text-base">
+          사람별 마지막 접속 <span className="text-xs font-normal text-muted">허용 명단 전체</span>
         </h2>
         <div className="-mx-5 mt-4 overflow-x-auto px-5">
           <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
@@ -105,28 +103,22 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
       {/* 전체 기록 */}
       <section className="card space-y-4 p-5">
-        <h2 className="flex items-center gap-2 text-xl">
-          <Star size={20} /> 전체 기록 <span className="font-sans text-sm text-muted">최신순 · {filtered.length.toLocaleString()}건</span>
+        <h2 className="flex flex-wrap items-baseline gap-x-2 text-base">
+          전체 기록 <span className="text-xs font-normal text-muted">최신순 · {filtered.length.toLocaleString()}건</span>
         </h2>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted">행동</span>
+        <ChipRow label="행동">
           {["", ...ACTIONS].map((a) => (
-            <Link
-              key={a || "all"}
-              href={filterHref({ action: a })}
-              scroll={false}
-              className={`rounded-full border px-2.5 py-1 ${action === a ? "border-transparent bg-accent font-semibold text-accent-ink" : "border-border text-muted hover:bg-accent-soft"}`}
-            >
+            <Chip key={a || "all"} href={filterHref({ action: a })} active={action === a}>
               {a || "전체"}
-            </Link>
+            </Chip>
           ))}
           {who && (
-            <Link href={filterHref({ who: "" })} scroll={false} className="ml-2 rounded-full bg-accent-soft px-2.5 py-1 text-accent-strong">
+            <Chip href={filterHref({ who: "" })} active title="이 사람 필터 해제">
               {nameOf.get(who) || who} ✕
-            </Link>
+            </Chip>
           )}
-        </div>
+        </ChipRow>
 
         <div className="-mx-5 overflow-x-auto px-5">
           <table className="w-full min-w-[820px] border-separate border-spacing-0 text-sm">
@@ -177,7 +169,7 @@ function Stat({ label, value, unit, sub, warn }: { label: string; value: number;
   return (
     <div className={`card p-4 ${warn ? "ring-2 ring-bad/40" : ""}`}>
       <div className="text-xs text-muted">{label}</div>
-      <div className={`mt-1 font-cute text-4xl ${warn ? "text-bad" : ""}`}>
+      <div className={`mt-1 font-cute text-3xl tabular-nums ${warn ? "text-bad" : ""}`}>
         {value.toLocaleString()}
         <span className="ml-0.5 text-base">{unit}</span>
       </div>
