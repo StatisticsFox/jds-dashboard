@@ -14,6 +14,7 @@ const DEFAULT_COUNT = 4;
 const METRICS: { key: WeeklyMetric; label: string }[] = [
   { key: "find", label: "찾기" },
   { key: "sangdam", label: "상담" },
+  { key: "yuk", label: "육따기" },
 ];
 const isMetric = (v: unknown): v is WeeklyMetric => typeof v === "string" && v in WEEKLY_METRICS;
 
@@ -197,7 +198,11 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-muted">큰 숫자는 누적 인원, 옆의 +숫자는 그 주차에 새로 늘어난 인원이에요. – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고, {metric === "find" ? "찾기 주차(B열)가 빈 행은 세지 않아요." : "비상 탭 주차(A열)가 43년 형식인 행만 세요."}</p>
+            <p className="text-xs text-muted">큰 숫자는 누적 인원, 옆의 +숫자는 그 주차에 새로 늘어난 인원이에요. – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고, {metric === "find"
+                ? "찾기 주차(B열)가 빈 행은 세지 않아요."
+                : metric === "sangdam"
+                  ? "비상 탭 주차(A열)가 43년 형식인 행만 세요."
+                  : "육따기 탭 개강월(A열)이 43년인 행만, 주차는 B열로 세요. 인도·교육 등 역할마다 한 줄씩이라 한 줄 = 0.5명이에요."}</p>
           </>
         )}
       </CaptureArea>
