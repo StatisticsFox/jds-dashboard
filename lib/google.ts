@@ -1,5 +1,6 @@
 import "server-only";
 import { JWT } from "google-auth-library";
+import { noteFetched, SHEETS_TAG } from "./data-time";
 
 // 시트를 다시 읽는 주기(초). 그 사이에는 캐시된 값을 사용
 const REVALIDATE_SECONDS = 300;
@@ -29,11 +30,12 @@ async function sheetsGet<T>(spreadsheetId: string, path: string, revalidate = RE
   const { token } = await auth.getAccessToken();
   const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/${path}`, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate },
+    next: { revalidate, tags: [SHEETS_TAG] },
   });
   if (!res.ok) {
     throw new Error(`스프레드시트 읽기 실패 (${res.status}): ${await res.text()}`);
   }
+  noteFetched(res.headers.get("date"));
   return res.json();
 }
 

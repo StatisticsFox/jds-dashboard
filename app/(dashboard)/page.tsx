@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { RefreshBar } from "@/components/RefreshBar";
+import { dataFetchedAt } from "@/lib/data-time";
 import { CaptureArea } from "@/components/CaptureArea";
 import { MetricCompare } from "@/components/MetricCompare";
 import { TeamDetail } from "@/components/TeamDetail";
@@ -61,6 +63,9 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
               상예 {settings.sangyeStart} ~ {settings.sangyeEnd}
             </span>
           </p>
+          <div className="mt-2">
+            <RefreshBar at={dataFetchedAt()} />
+          </div>
         </div>
         {/* 별 장식은 넓은 화면에서만 (좁으면 글자와 겹침) */}
         <span className="absolute right-6 top-5 hidden sm:block">

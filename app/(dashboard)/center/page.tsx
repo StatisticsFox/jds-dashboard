@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { RefreshBar } from "@/components/RefreshBar";
+import { dataFetchedAt } from "@/lib/data-time";
 import { AttrCard, CompareTable, DonutCard, MbtiCard } from "@/components/AttrCard";
 import { CaptureArea } from "@/components/CaptureArea";
 import { Mascot, Star } from "@/components/Mascot";
@@ -73,11 +75,15 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center gap-3">
         <Mascot size={48} />
         <div>
           <h1 className="text-3xl">등록 열매 분석</h1>
           <p className="mt-0.5 text-sm text-muted">개강마다 센터에 등록한 열매가 어떤 특징을 가졌는지 봐요</p>
+        </div>
+        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
+        <div className="ml-auto">
+          <RefreshBar at={dataFetchedAt()} />
         </div>
       </header>
 

@@ -1,4 +1,6 @@
 import { CaptureArea } from "@/components/CaptureArea";
+import { RefreshBar } from "@/components/RefreshBar";
+import { dataFetchedAt } from "@/lib/data-time";
 import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
 import { Mascot, Star } from "@/components/Mascot";
 import { ReasonBars } from "@/components/ReasonBars";
@@ -27,11 +29,15 @@ export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
-      <header className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center gap-3">
         <Mascot size={48} />
         <div>
           <h1 className="text-3xl">타찾 탈락사유 비교</h1>
           <p className="mt-0.5 text-sm text-muted">개강 하나, 주차 하나를 골라 찾기가 어떤 사유로 탈락했는지 봐요</p>
+        </div>
+        {/* 데이터 기준 시각 + 새로고침 (데이터를 다 읽은 뒤라 이 요청의 기준 시각이 정해져 있음) */}
+        <div className="ml-auto">
+          <RefreshBar at={dataFetchedAt()} />
         </div>
       </header>
 
