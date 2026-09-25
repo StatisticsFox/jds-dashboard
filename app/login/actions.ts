@@ -25,9 +25,6 @@ async function requestCode(_prev: LoginState, formData: FormData): Promise<Login
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { step: "email", email, error: "이메일 주소를 확인해 주세요." };
   }
-  if (!allow(`send:${email}`, 1, 60_000) || !allow(`send-hour:${email}`, 5, 3_600_000)) {
-    return { step: "email", email, error: "잠시 후 다시 시도해 주세요. (1분에 한 번, 1시간에 5번까지)" };
-  }
 
   const code = generateCode();
   const person = await findAllowedPerson(email);
