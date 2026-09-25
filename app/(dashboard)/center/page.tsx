@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AttrCard, CompareTable, MbtiCard } from "@/components/AttrCard";
+import { AttrCard, CompareTable, DonutCard, MbtiCard } from "@/components/AttrCard";
 import { CaptureArea } from "@/components/CaptureArea";
 import { Mascot, Star } from "@/components/Mascot";
 import { ATTRS, getCenterData, mbtiAxes, orderValues, tally, type AttrKey, type Person } from "@/lib/center";
@@ -10,6 +10,13 @@ const chip = (on: boolean) =>
     on ? "border-transparent bg-accent font-semibold text-accent-ink shadow-sm" : "border-border text-muted hover:border-accent hover:bg-accent-soft hover:text-foreground"
   }`;
 const isAttr = (v: unknown): v is AttrKey => typeof v === "string" && ATTRS.some((a) => a.key === v);
+
+// 원그래프로 볼 항목과 색. 섭외유형은 '섭외유형' 탭과 같은 색 순서(노방 파랑, 소모임/동아리 주황 …)
+const DONUT_COLORS: Partial<Record<AttrKey, string[]>> = {
+  channel: ["노방", "소모임/동아리", "지인", "개척지인", "기능 1인1도구"],
+  gender: ["여자", "남자"],
+};
+const GRAY = "color-mix(in oklab, var(--muted) 45%, var(--surface))";
 
 export default async function CenterPage({ searchParams }: PageProps<"/center">) {
   await requireUser();
@@ -29,6 +36,20 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
   const rowsOf = (key: AttrKey, list: Person[]) => {
     const counts = tally(list, key);
     return orderValues(key, counts).map((label) => ({ label, count: counts.get(label) ?? 0 }));
+  };
+  // 원그래프 조각: 고정 목록 값은 정해진 색, 그 밖의 값은 다음 색부터 차례로, 기타·미기재는 회색
+  const donutSlices = (key: AttrKey) => {
+    const fixed = DONUT_COLORS[key]!;
+    const rows = rowsOf(key, people);
+    const known = fixed.flatMap((label, i) => rows.filter((r) => r.label === label).map((r) => ({ label, value: r.count, color: `var(--cat-${i + 1})` })));
+    const others = rows
+      .filter((r) => !fixed.includes(r.label))
+      .map((r, i) => ({
+        label: r.label,
+        value: r.count,
+        color: r.label === "미기재" || /^기타/.test(r.label) ? GRAY : `var(--cat-${Math.min(8, fixed.length + i + 1)})`,
+      }));
+    return [...known, ...others];
   };
   const top = (key: AttrKey) => rowsOf(key, people).sort((a, b) => b.count - a.count)[0];
   const gender = tally(people, "gender");
@@ -106,7 +127,9 @@ export default async function CenterPage({ searchParams }: PageProps<"/center">)
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {ATTRS.map((a) =>
-            a.kind === "mbti" ? (
+            a.key in DONUT_COLORS ? (
+              <DonutCard key={a.key} title={a.label} slices={donutSlices(a.key)} />
+            ) : a.kind === "mbti" ? (
               <MbtiCard key={a.key} axes={mbtiAxes(people)} top={rowsOf("mbti", people).sort((x, y) => y.count - x.count).slice(0, 6)} total={people.length} />
             ) : (
               <AttrCard

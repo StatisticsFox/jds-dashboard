@@ -6,7 +6,8 @@ export type Slice = { label: string; value: number; color: string };
 
 // 도넛(가운데 뚫린 원그래프) + 순위 목록.
 // 조각이나 목록에 마우스를 올리면 둘 다 함께 강조되고, 가운데에 그 항목의 개수·비율이 보임
-export function DonutChart({ slices, unit = "명", size = 260 }: { slices: Slice[]; unit?: string; size?: number }) {
+// compact: 좁은 카드용 (작은 도넛을 위에, 목록을 아래에)
+export function DonutChart({ slices, unit = "명", size = 260, compact = false }: { slices: Slice[]; unit?: string; size?: number; compact?: boolean }) {
   const [active, setActive] = useState<string | null>(null);
   const total = slices.reduce((s, d) => s + d.value, 0);
   const shown = slices.filter((d) => d.value > 0);
@@ -19,7 +20,7 @@ export function DonutChart({ slices, unit = "명", size = 260 }: { slices: Slice
   let angle = -Math.PI / 2; // 12시 방향부터 시계 방향
 
   return (
-    <div className="flex flex-col items-center gap-8 md:flex-row md:items-center md:justify-center">
+    <div className={compact ? "flex flex-col items-center gap-4" : "flex flex-col items-center gap-8 md:flex-row md:items-center md:justify-center"}>
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} onPointerLeave={() => setActive(null)}>
           {shown.length === 1 ? (
@@ -50,7 +51,7 @@ export function DonutChart({ slices, unit = "명", size = 260 }: { slices: Slice
           {current ? (
             <>
               <span className="max-w-[60%] truncate text-xs text-muted">{current.label}</span>
-              <span className="font-cute text-3xl">{pct(current.value).toFixed(1)}%</span>
+              <span className={`font-cute ${compact ? "text-xl" : "text-3xl"}`}>{pct(current.value).toFixed(1)}%</span>
               <span className="text-xs text-muted">
                 {current.value.toLocaleString()}
                 {unit}
@@ -59,7 +60,7 @@ export function DonutChart({ slices, unit = "명", size = 260 }: { slices: Slice
           ) : (
             <>
               <span className="text-xs text-muted">전체</span>
-              <span className="font-cute text-4xl">{total.toLocaleString()}</span>
+              <span className={`font-cute ${compact ? "text-2xl" : "text-4xl"}`}>{total.toLocaleString()}</span>
               <span className="text-xs text-muted">{unit}</span>
             </>
           )}
@@ -67,7 +68,7 @@ export function DonutChart({ slices, unit = "명", size = 260 }: { slices: Slice
       </div>
 
       {/* 순위 목록: 비율이 비슷한 조각도 정확히 비교할 수 있게 */}
-      <ol className="w-full max-w-sm space-y-1 text-sm tabular-nums" onPointerLeave={() => setActive(null)}>
+      <ol className={`w-full space-y-1 text-sm tabular-nums ${compact ? "" : "max-w-sm"}`} onPointerLeave={() => setActive(null)}>
         {ranked.map((d, i) => (
           <li
             key={d.label}

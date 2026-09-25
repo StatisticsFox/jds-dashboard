@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DonutChart, type Slice } from "@/components/DonutChart";
 import { Star } from "@/components/Mascot";
 
 type Row = { label: string; count: number };
@@ -32,6 +33,18 @@ export function AttrCard({ title, total, rows, note }: { title: string; total: n
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+// 원그래프 카드 (섭외유형·성별처럼 종류가 적은 항목)
+export function DonutCard({ title, slices }: { title: string; slices: Slice[] }) {
+  return (
+    <section className="card flex flex-col p-5">
+      <h3 className="mb-3 flex items-center gap-2 text-lg">
+        <Star size={18} /> {title}
+      </h3>
+      <DonutChart slices={slices} size={170} compact />
     </section>
   );
 }
