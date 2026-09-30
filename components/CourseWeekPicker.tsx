@@ -1,4 +1,5 @@
 import { Chip, ChipRow } from "@/components/Chip";
+import { TeamChipRow } from "@/components/TeamChips";
 
 type PickCourse = { id: string; label: string; weeks: Map<number, unknown> };
 export type WeekChoice = number | "all";
@@ -13,20 +14,20 @@ export function selectCourseWeek<T extends PickCourse>(courses: T[], params: Rec
 }
 
 // 개강 칩 한 줄 + 주차 칩 한 줄 (섭외유형·타찾 탈락 탭 공용).
-// teams를 넘기면 팀 칩 줄(전체·1~7팀)도 붙음. 고른 팀은 ?t=3, 전체면 주소에서 뺌
+// withTeams면 팀 칩 줄(전체·1~7팀)도 붙음. 고른 팀은 ?t=3, 전체면 주소에서 뺌
 export function CourseWeekPicker({
   courses,
   course,
   weeks,
   week,
-  teams,
+  withTeams = false,
   team,
 }: {
   courses: PickCourse[];
   course?: PickCourse;
   weeks: number[];
   week?: WeekChoice;
-  teams?: readonly number[];
+  withTeams?: boolean;
   team?: number;
 }) {
   const year = course?.id.split("-")[0] ?? "";
@@ -51,15 +52,7 @@ export function CourseWeekPicker({
           </Chip>
         ))}
       </ChipRow>
-      {teams && (
-        <ChipRow label="팀" className="border-t border-grid pt-3">
-          {[undefined, ...teams].map((id) => (
-            <Chip key={id ?? "all"} href={{ query: { c: course?.id, ...(week !== undefined && { w: String(week) }), ...(id && { t: id }) } }} active={team === id}>
-              {id ? `${id}팀` : "전체"}
-            </Chip>
-          ))}
-        </ChipRow>
-      )}
+      {withTeams && <TeamChipRow team={team} href={(id) => ({ query: { c: course?.id, ...(week !== undefined && { w: String(week) }), ...(id && { t: id }) } })} />}
     </section>
   );
 }

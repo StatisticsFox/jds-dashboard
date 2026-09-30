@@ -5,7 +5,8 @@ import { dataFetchedAt } from "@/lib/data-time";
 import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
 import { DonutChart } from "@/components/DonutChart";
 import { StackedShare } from "@/components/StackedShare";
-import { getChannelData, OTHER, TEAM_IDS } from "@/lib/channels";
+import { getChannelData, OTHER } from "@/lib/channels";
+import { pickTeam } from "@/lib/teams";
 import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 
@@ -22,9 +23,7 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
   const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params, await preferredCourse());
 
   // 팀 하나(?t=3) 또는 전체. 주차 칩은 팀과 상관없이 개강 전체 기준으로 보여 줌
-  const team = TEAM_IDS.find((t) => String(t) === params.t);
-  const teamLabel = team ? `${team}팀` : "전체 팀";
-  const teamQuery = team ? { t: team } : {};
+  const { team, teamLabel, teamQuery } = pickTeam(params);
   const source = team ? (course?.teams.get(team) ?? new Map<number, Map<string, number>>()) : course?.weeks;
 
   const counts = new Map<string, number>();
@@ -51,7 +50,7 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
         right={<RefreshBar at={dataFetchedAt()} />}
       />
 
-      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} teams={TEAM_IDS} team={team} />
+      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} withTeams team={team} />
 
       <CaptureArea className="card space-y-6 p-5" fileName={`섭외유형_${course?.label ?? ""}_${weekLabel}${team ? `_${teamLabel}` : ""}`.replace(/\s/g, "")} caption={caption}>
         <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">

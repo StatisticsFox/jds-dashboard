@@ -8,7 +8,8 @@ import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import { dataFetchedAt } from "@/lib/data-time";
 import { formatCount } from "@/lib/format";
-import { cumulativeTo, getGoalData, STAGES, TEAM_IDS, targetOf, weeksOf, type GoalStage } from "@/lib/goals";
+import { TEAM_IDS } from "@/lib/teams";
+import { cumulativeTo, getGoalData, STAGES, targetOf, weeksOf, type GoalStage } from "@/lib/goals";
 
 
 // missing: 실적 자료 자체가 아직 없음 (예: 센터등록 자료에 아직 없는 개강)

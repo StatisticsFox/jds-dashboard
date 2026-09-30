@@ -1,9 +1,10 @@
 import "server-only";
 import { readColumns } from "./google";
+import { teamOf } from "./teams";
 import { describeCourse, FIRST_YEAR, WEEK_PATTERN } from "./weekly";
 
 // '새빛 찾기 체계'의 '누적추이 계산용 시트(수정금지)'에서
-// B열(찾기 주차)로 개강·주차를 나누고 K열(탈락 사유)별 개수를 셈.
+// B열(찾기 주차)로 개강·주차를 나누고 K열(탈락 사유)별 개수를 셈. C열(팀-구역)로 팀도 나눔.
 // K열이 비어 있으면 탈락하지 않은 찾기(진행 중·다음 단계)로 보고 사유 집계에서는 빼고 전체 수에만 포함
 
 // finds: 전체 개수(찾기 또는 열매), reasons: 탈락 사유별 개수
@@ -15,14 +16,30 @@ export const normalizeReason = (raw: unknown) =>
     .trim()
     .replace(/\s*\(\s*/g, " (")
     .replace(/\s+/g, " ");
-export type DropCourse = { id: string; label: string; order: number; weeks: Map<number, WeekDrops> };
+export type DropCourse = {
+  id: string;
+  label: string;
+  order: number;
+  weeks: Map<number, WeekDrops>; // 주차 → 전체 팀
+  teams: Map<number, Map<number, WeekDrops>>; // 팀 → 주차
+};
+
+// 한 주차 칸에 찾기 하나(사유가 있으면 사유도)를 더함
+function addFind(weeks: Map<number, WeekDrops>, week: number, reason: string) {
+  const bucket = weeks.get(week) ?? { finds: 0, reasons: new Map<string, number>() };
+  bucket.finds++;
+  if (reason) bucket.reasons.set(reason, (bucket.reasons.get(reason) ?? 0) + 1);
+  weeks.set(week, bucket);
+}
 
 export async function getDropData() {
-  const [weekCol, reasonCol] = await readColumns(process.env.GOOGLE_SHEET_ID!, [
+  const [weekCol, teamCol, reasonCol] = await readColumns(process.env.GOOGLE_SHEET_ID!, [
     "'누적추이 계산용 시트(수정금지)'!B2:B",
+    "'누적추이 계산용 시트(수정금지)'!C2:C",
     "'누적추이 계산용 시트(수정금지)'!K2:K",
   ]);
   const weeksRaw = weekCol[0] ?? [];
+  const teamsRaw = teamCol[0] ?? [];
   const reasonsRaw = reasonCol[0] ?? [];
 
   const courses = new Map<string, DropCourse>();
@@ -35,18 +52,19 @@ export async function getDropData() {
     let course = courses.get(id);
     if (!course) {
       const { label, order } = describeCourse(month);
-      course = { id, label, order: Number(year) * 100 + order, weeks: new Map() };
+      course = { id, label, order: Number(year) * 100 + order, weeks: new Map(), teams: new Map() };
       courses.set(id, course);
     }
     const week = Number(weekStr);
-    const bucket = course.weeks.get(week) ?? { finds: 0, reasons: new Map<string, number>() };
-    bucket.finds++;
     const reason = normalizeReason(reasonsRaw[i]);
-    if (reason) {
-      bucket.reasons.set(reason, (bucket.reasons.get(reason) ?? 0) + 1);
-      totals.set(reason, (totals.get(reason) ?? 0) + 1);
+    if (reason) totals.set(reason, (totals.get(reason) ?? 0) + 1);
+    addFind(course.weeks, week, reason);
+    const team = teamOf(teamsRaw[i]);
+    if (team) {
+      const teamWeeks = course.teams.get(team) ?? new Map<number, WeekDrops>();
+      course.teams.set(team, teamWeeks);
+      addFind(teamWeeks, week, reason);
     }
-    course.weeks.set(week, bucket);
   }
 
   return {

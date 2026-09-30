@@ -1,5 +1,6 @@
 import "server-only";
 import { readColumns } from "./google";
+import { teamOf } from "./teams";
 import { describeCourse, FIRST_YEAR, WEEK_PATTERN } from "./weekly";
 
 // '새빛 찾기 체계'의 '누적추이 계산용 시트(수정금지)'에서
@@ -18,8 +19,6 @@ export type ChannelCourse = {
   weeks: Map<number, Map<string, number>>; // 주차 → (섭외유형 → 개수), 전체 팀
   teams: Map<number, Map<number, Map<string, number>>>; // 팀 → 주차 → (섭외유형 → 개수)
 };
-
-export const TEAM_IDS = [1, 2, 3, 4, 5, 6, 7] as const;
 
 // 한 칸(주차별 섭외유형 개수)에 1을 더함
 function bump(weeks: Map<number, Map<string, number>>, week: number, type: string) {
@@ -45,7 +44,7 @@ export async function getChannelData() {
     const m = String(weeksRaw[i] ?? "").trim().match(WEEK_PATTERN);
     if (!m || Number(m[1]) < FIRST_YEAR) continue;
     const type = String(typesRaw[i] ?? "").trim() || OTHER;
-    const team = Number(String(teamsRaw[i] ?? "").trim().match(/^(\d+)-/)?.[1]) || null;
+    const team = teamOf(teamsRaw[i]);
     rows.push({ year: Number(m[1]), month: m[2], week: Number(m[3]), team, type });
     totals.set(type, (totals.get(type) ?? 0) + 1);
   }

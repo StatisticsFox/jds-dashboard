@@ -1,6 +1,7 @@
 import "server-only";
 import { getCenterData } from "./center";
 import { readColumns, readValues, type Cell } from "./google";
+import { TEAM_IDS, teamOf } from "./teams";
 import { FIRST_YEAR, WEEK_PATTERN } from "./weekly";
 
 // 목표 대비 달성률
@@ -26,13 +27,11 @@ export type GoalStage = (typeof STAGES)[number]["key"];
 // 열 글자 → 0부터 센 열 번호 (예: J → 9, AB → 27)
 const colIndex = (col: string) => [...col].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
 
-export const TEAM_IDS = [1, 2, 3, 4, 5, 6, 7] as const;
 type WeekMap = Map<number, number>; // 주차 → 인원 (목표는 누적, 실적은 그 주차 인원)
 // courseId → team → stage → 주차별 값. 주차가 없는 단계는 week 0에 합계
 type Store = Map<string, Map<number, Map<GoalStage, WeekMap>>>;
 
 const text = (v: Cell) => String(v ?? "").trim();
-const teamOf = (v: Cell) => Number(text(v).match(/^(\d+)-/)?.[1]) || null;
 const courseIdOf = (v: Cell) => {
   const m = text(v).match(/^(\d+)년\s*([\d.]+)월/);
   return m && Number(m[1]) >= FIRST_YEAR ? `${m[1]}-${m[2]}` : null;

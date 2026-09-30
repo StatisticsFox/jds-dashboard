@@ -1,10 +1,11 @@
 import "server-only";
 import { normalizeReason, type WeekDrops } from "./drops";
 import { readColumns } from "./google";
+import { teamOf } from "./teams";
 import { describeCourse, FIRST_YEAR } from "./weekly";
 
 // '새빛 찾기 체계'의 '열매누적'(상담 예정 이상 열매)에서 목표 개강별 탈락 사유를 셈
-// A 단계 | C 인도 지역 | M 목표 개강 | R 탈락 사유  (3행 머리글, 4행부터 데이터)
+// A 단계 | C 인도 지역 | D 인도 팀-구역 | M 목표 개강 | R 탈락 사유  (3행 머리글, 4행부터 데이터)
 // 인도 지역이 채워진 행 = 열매 하나. 탈락 사유가 비어 있으면 개강에 들어간 것(진행 중 개강은 아직 진행 중)
 
 // 탈락 단계 (진행 순서). 단계(A열) 값 → 단계:
@@ -44,14 +45,15 @@ function stageOf(raw: string): Stage | "find" | null {
   return null;
 }
 
-// stage: A열로 본 단계(탈락 여부와 관계없이), dropped: A열에 "탈락"이 들어감, reason: R열 탈락 사유
-type Fruit = { stage: Stage | null; dropped: boolean; reason: string };
+// stage: A열로 본 단계(탈락 여부와 관계없이), dropped: A열에 "탈락"이 들어감, reason: R열 탈락 사유, team: D열 인도 팀
+type Fruit = { stage: Stage | null; dropped: boolean; reason: string; team: number | null };
 export type FruitCourse = { id: string; label: string; order: number; fruits: Fruit[] };
 
 export async function getFruitDropData() {
-  const [stageCol, regionCol, courseCol, reasonCol] = await readColumns(process.env.GOOGLE_SHEET_ID!, [
+  const [stageCol, regionCol, teamCol, courseCol, reasonCol] = await readColumns(process.env.GOOGLE_SHEET_ID!, [
     "'열매누적'!A4:A",
     "'열매누적'!C4:C",
+    "'열매누적'!D4:D",
     "'열매누적'!M4:M",
     "'열매누적'!R4:R",
   ]);
@@ -74,7 +76,7 @@ export async function getFruitDropData() {
     const stage = stageOf(rawStage);
     if (stage === "find") continue; // 찾기 단계는 열매가 아님
     const reason = normalizeReason(reasonCol[0]?.[i]);
-    course.fruits.push({ stage, dropped: rawStage.includes("탈락"), reason });
+    course.fruits.push({ stage, dropped: rawStage.includes("탈락"), reason, team: teamOf(teamCol[0]?.[i]) });
     if (reason) totals.set(reason, (totals.get(reason) ?? 0) + 1);
   }
 

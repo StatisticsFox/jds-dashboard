@@ -7,7 +7,8 @@ import { ReasonBars } from "@/components/ReasonBars";
 import { ReasonHeatmap } from "@/components/ReasonHeatmap";
 import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
-import { getDropData, sumDrops } from "@/lib/drops";
+import { getDropData, sumDrops, type WeekDrops } from "@/lib/drops";
+import { pickTeam } from "@/lib/teams";
 
 export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
   await requireUser();
@@ -16,27 +17,31 @@ export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
 
   // 개강 하나·주차 하나 (?c=43-9&w=8|all)
   const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params, await preferredCourse());
-  const all = sumDrops([...(course?.weeks.values() ?? [])]);
-  const current = week === "all" ? all : (course?.weeks.get(week as number) ?? sumDrops([]));
+  // 팀 하나(?t=3) 또는 전체. 주차 칩은 팀과 상관없이 개강 전체 기준
+  const { team, teamLabel, teamQuery } = pickTeam(params);
+  const source = team ? (course?.teams.get(team) ?? new Map<number, WeekDrops>()) : course?.weeks;
+  const all = sumDrops([...(source?.values() ?? [])]);
+  const current = week === "all" ? all : (source?.get(week as number) ?? sumDrops([]));
   const dropped = [...current.reasons.values()].reduce((a, b) => a + b, 0);
   const topReason = [...current.reasons].sort((a, b) => b[1] - a[1])[0];
 
   const heatRows = [
-    ...weeks.map((w) => ({ key: String(w), label: `${w}주차`, href: { query: { c: course?.id, w } }, active: week === w, data: course!.weeks.get(w)! })),
-    { key: "all", label: "전체", href: { query: { c: course?.id, w: "all" } }, active: week === "all", data: all },
+    ...weeks.map((w) => ({ key: String(w), label: `${w}주차`, href: { query: { c: course?.id, w, ...teamQuery } }, active: week === w, data: source?.get(w) ?? sumDrops([]) })),
+    { key: "all", label: "전체", href: { query: { c: course?.id, w: "all", ...teamQuery } }, active: week === "all", data: all },
   ];
-  const captionBase = `새빛지역 · 43년 ${course?.label ?? ""}`;
-  const fileBase = `탈락사유_${course?.label ?? ""}`.replace(/\s/g, "");
+  const captionBase = `새빛지역 · ${teamLabel} · 43년 ${course?.label ?? ""}`;
+  const fileBase = `탈락사유_${course?.label ?? ""}${team ? `_${teamLabel}` : ""}`.replace(/\s/g, "");
+  const teamSuffix = team ? ` · ${teamLabel}` : "";
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
       <PageHeader
         title="타찾 탈락사유 비교"
-        description={<>개강 하나, 주차 하나를 골라 찾기가 어떤 사유로 탈락했는지 봐요</>}
+        description={<>개강·주차·팀을 골라 찾기가 어떤 사유로 탈락했는지 봐요</>}
         right={<RefreshBar at={dataFetchedAt()} />}
       />
 
-      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} />
+      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} withTeams team={team} />
 
       {/* 요약 */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -48,15 +53,17 @@ export default async function DropsPage({ searchParams }: PageProps<"/drops">) {
 
       <CaptureArea className="card space-y-5 p-5" fileName={`${fileBase}_${weekLabel}`.replace(/\s/g, "")} caption={`${captionBase} · ${weekLabel} · 탈락 사유`}>
         <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
-          {course?.label} · {weekLabel} <span className="text-xs font-normal text-muted">탈락 사유 순위 · 비율은 탈락 사유가 적힌 찾기 중</span>
+          {course?.label} · {weekLabel}
+          {teamSuffix} <span className="text-xs font-normal text-muted">탈락 사유 순위 · 비율은 탈락 사유가 적힌 찾기 중</span>
         </h2>
-        {dropped === 0 ? <p className="py-12 text-center text-sm text-muted">이 개강·주차에는 탈락 사유 기록이 없어요.</p> : <ReasonBars rows={reasons.map((r) => ({ label: r, count: current.reasons.get(r) ?? 0 }))} />}
+        {dropped === 0 ? <p className="py-12 text-center text-sm text-muted">{team ? `${teamLabel}은 ` : ""}이 개강·주차에 탈락 사유 기록이 없어요.</p> : <ReasonBars rows={reasons.map((r) => ({ label: r, count: current.reasons.get(r) ?? 0 }))} />}
       </CaptureArea>
 
       {course && weeks.length > 0 && (
         <CaptureArea className="card space-y-4 p-5" fileName={`${fileBase}_주차별`} caption={`${captionBase} · 주차별 탈락 사유 비율`}>
           <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
             {course.label} 주차별 비교
+            {teamSuffix}
             <span className="text-xs font-normal text-muted">칸 = 그 주차 탈락 중 사유 비율 · 진할수록 높음 · 주차를 누르면 위 순위가 바뀌어요</span>
           </h2>
           <ReasonHeatmap reasons={reasons} rows={heatRows} />
