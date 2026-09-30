@@ -10,6 +10,28 @@ type Props = {
   children: React.ReactNode;
 };
 
+// 그래프(SVG)의 색은 var(--cat-1) 같은 테마 변수로 되어 있는데, 캡처 복사본에서는 이 변수가 풀리지 않아
+// 원그래프가 검게, 선이 안 보이게 나옴. 캡처하는 동안만 실제 색으로 바꿔 두고, 끝나면 되돌리는 함수를 돌려줌
+function resolveSvgColors(root: HTMLElement) {
+  const undo: (() => void)[] = [];
+  root.querySelectorAll<SVGElement>("svg *").forEach((el) => {
+    const computed = getComputedStyle(el);
+    for (const prop of ["fill", "stroke", "stop-color"] as const) {
+      const attr = el.getAttribute(prop);
+      if (attr?.includes("var(") || attr?.includes("color-mix(")) {
+        el.setAttribute(prop, computed.getPropertyValue(prop));
+        undo.push(() => el.setAttribute(prop, attr));
+      }
+      const inline = el.style.getPropertyValue(prop);
+      if (inline.includes("var(") || inline.includes("color-mix(")) {
+        el.style.setProperty(prop, computed.getPropertyValue(prop));
+        undo.push(() => el.style.setProperty(prop, inline));
+      }
+    }
+  });
+  return () => undo.forEach((f) => f());
+}
+
 type Status = "idle" | "busy" | "copied" | "saved";
 
 // 감싼 영역을 PNG 이미지로 복사하거나 저장하는 버튼을 오른쪽 위에 붙임
@@ -21,6 +43,7 @@ export function CaptureArea({ fileName, caption, className = "", children }: Pro
   async function render(): Promise<Blob> {
     const node = ref.current!;
     node.dataset.capturing = "";
+    const restore = resolveSvgColors(node);
     try {
       const blob = await toBlob(node, {
         pixelRatio: 2,
@@ -31,6 +54,7 @@ export function CaptureArea({ fileName, caption, className = "", children }: Pro
       if (!blob) throw new Error("이미지를 만들지 못했어요.");
       return blob;
     } finally {
+      restore();
       delete node.dataset.capturing;
     }
   }
