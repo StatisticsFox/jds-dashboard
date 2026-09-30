@@ -9,6 +9,7 @@ type Group = { title: string; items: Item[] };
 
 // 메뉴 묶음. 관리자 묶음은 관리자에게만
 const GROUPS: Group[] = [
+  { title: "소식", items: [{ href: "/notices", label: "공지사항" }] },
   {
     title: "현황",
     items: [

@@ -88,7 +88,7 @@ async function verifyCodeStep(formData: FormData): Promise<LoginState> {
   await clearPendingLogin();
   await createSession(email);
   await logEvent({ email, name: person.name, action: "로그인", path: "/login" });
-  redirect("/");
+  redirect("/notices");
 }
 
 // 코드 입력 화면에서 '이메일 다시 입력'
