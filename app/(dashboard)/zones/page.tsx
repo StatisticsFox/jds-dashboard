@@ -47,7 +47,7 @@ export default async function ZonesPage({ searchParams }: PageProps<"/zones">) {
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
       <PageHeader
         title="타찾·상예 구역별 순위"
-        description={<>기간과 팀을 골라 구역마다 타찾·상예 수와 지역 순위를 봐요</>}
+        description={<>기간과 팀을 골라 구역마다 타찾·상예 수와 순위를 봐요</>}
         right={<RefreshBar at={dataFetchedAt()} />}
       />
 
@@ -99,7 +99,7 @@ export default async function ZonesPage({ searchParams }: PageProps<"/zones">) {
       </div>
 
       <p className="text-xs text-muted">
-        순위는 팀을 골라도 지역 전체 {zones.length}개 구역 중 순위예요. 같은 수는 같은 순위이고, 1~3위에는 메달이 붙어요. 기간은 시작·마지막 날짜를 모두 포함해요.
+        순위는 지금 보이는 구역끼리 매겨요: 전체 팀이면 지역 {zones.length}개 구역 중, 팀을 고르면 그 팀 구역 중 순위예요. 같은 수는 같은 순위이고, 1~3위에는 메달이 붙어요. 기간은 시작·마지막 날짜를 모두 포함해요.
       </p>
     </main>
   );
@@ -123,10 +123,11 @@ function RankCard({
   fileName: string;
   caption: string;
 }) {
-  const ranks = rankOf(counts);
-  const max = Math.max(1, ...counts.values());
-  const zones = [...counts.keys()].filter((z) => !team || z.startsWith(`${team}-`));
-  const rows = zones.sort((a, b) => counts.get(b)! - counts.get(a)!);
+  // 순위·메달·막대 길이는 지금 보이는 구역끼리 (팀을 고르면 그 팀 안에서 다시 매김)
+  const shown = new Map([...counts].filter(([z]) => !team || z.startsWith(`${team}-`)));
+  const ranks = rankOf(shown);
+  const max = Math.max(1, ...shown.values());
+  const rows = [...shown.keys()].sort((a, b) => counts.get(b)! - counts.get(a)!);
   const total = rows.reduce((s, z) => s + counts.get(z)!, 0);
 
   return (
