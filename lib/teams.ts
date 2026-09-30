@@ -1,8 +1,18 @@
 // 새빛지역 팀 번호와, 시트의 팀-구역 칸("3-2" → 3팀)을 읽는 공용 도구
 export const TEAM_IDS = [1, 2, 3, 4, 5, 6, 7] as const;
 
-// "3-2" 같은 팀-구역 칸 → 3. 형식이 다르면 null
-export const teamOf = (v: unknown) => Number(String(v ?? "").trim().match(/^(\d+)-/)?.[1]) || null;
+// 팀-구역 칸 → "3-2". 시트가 "5-3"을 날짜(5월 3일)로 바꿔 저장한 칸(날짜 일련번호)은 월-일로 되돌림. 형식이 다르면 null
+export function zoneOf(v: unknown): string | null {
+  if (typeof v === "number" && v > 30000) {
+    const d = new Date(Date.UTC(1899, 11, 30) + v * 86_400_000);
+    return `${d.getUTCMonth() + 1}-${d.getUTCDate()}`;
+  }
+  const m = String(v ?? "").trim().match(/^(\d+)\s*-\s*(\d+)/);
+  return m ? `${Number(m[1])}-${Number(m[2])}` : null;
+}
+
+// 팀-구역 칸 → 팀 번호 3. 형식이 다르면 null
+export const teamOf = (v: unknown) => Number(zoneOf(v)?.split("-")[0]) || null;
 
 // 주소의 ?t=3 → 3, 없거나 1~7이 아니면 undefined(전체 팀)
 export function pickTeam(params: Record<string, string | string[] | undefined>) {
