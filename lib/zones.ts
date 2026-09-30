@@ -78,8 +78,8 @@ export function countByZone(records: { date: number; zone: string }[], zones: st
   return counts;
 }
 
-// 값이 큰 순서의 순위 (같은 값은 같은 순위: 10, 8, 8, 5 → 1, 2, 2, 4)
+// 값이 큰 순서의 순위. 같은 값은 같은 순위이고, 다음 값은 바로 다음 순위 (10, 10, 10, 8, 5 → 1, 1, 1, 2, 3)
 export function rankOf(values: Map<string, number>) {
-  const sorted = [...values.values()].sort((a, b) => b - a);
-  return new Map([...values].map(([k, v]) => [k, sorted.indexOf(v) + 1]));
+  const distinct = [...new Set(values.values())].sort((a, b) => b - a);
+  return new Map([...values].map(([k, v]) => [k, distinct.indexOf(v) + 1]));
 }
