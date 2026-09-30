@@ -5,7 +5,7 @@ import { dataFetchedAt } from "@/lib/data-time";
 import { CourseWeekPicker, selectCourseWeek } from "@/components/CourseWeekPicker";
 import { DonutChart } from "@/components/DonutChart";
 import { StackedShare } from "@/components/StackedShare";
-import { getChannelData, OTHER } from "@/lib/channels";
+import { getChannelData, OTHER, TEAM_IDS } from "@/lib/channels";
 import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 
@@ -21,8 +21,14 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
   // 개강 하나·주차 하나 (?c=43-9&w=8|all)
   const { course, weeks, week, weekLabel } = selectCourseWeek(courses, params, await preferredCourse());
 
+  // 팀 하나(?t=3) 또는 전체. 주차 칩은 팀과 상관없이 개강 전체 기준으로 보여 줌
+  const team = TEAM_IDS.find((t) => String(t) === params.t);
+  const teamLabel = team ? `${team}팀` : "전체 팀";
+  const teamQuery = team ? { t: team } : {};
+  const source = team ? (course?.teams.get(team) ?? new Map<number, Map<string, number>>()) : course?.weeks;
+
   const counts = new Map<string, number>();
-  for (const [w, byType] of course?.weeks ?? []) {
+  for (const [w, byType] of source ?? []) {
     if (week !== "all" && w !== week) continue;
     for (const [type, n] of byType) counts.set(type, (counts.get(type) ?? 0) + n);
   }
@@ -30,29 +36,30 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
 
   // 아래 100% 누적 막대: 이 개강의 주차별 비율 (큰 주차부터) + 맨 아래 전체
   const allCounts = new Map<string, number>();
-  for (const byType of course?.weeks.values() ?? []) for (const [t, n] of byType) allCounts.set(t, (allCounts.get(t) ?? 0) + n);
+  for (const byType of source?.values() ?? []) for (const [t, n] of byType) allCounts.set(t, (allCounts.get(t) ?? 0) + n);
   const shareRows = [
-    ...weeks.map((w) => ({ key: String(w), label: `${w}주차`, href: { query: { c: course?.id, w } }, active: week === w, counts: course!.weeks.get(w)! })),
-    { key: "all", label: "전체", href: { query: { c: course?.id, w: "all" } }, active: week === "all", counts: allCounts },
+    ...weeks.map((w) => ({ key: String(w), label: `${w}주차`, href: { query: { c: course?.id, w, ...teamQuery } }, active: week === w, counts: source?.get(w) ?? new Map<string, number>() })),
+    { key: "all", label: "전체", href: { query: { c: course?.id, w: "all", ...teamQuery } }, active: week === "all", counts: allCounts },
   ];
-  const caption = course ? `새빛지역 · 43년 ${course.label} · ${weekLabel} · 섭외유형별 찾기 수` : "";
+  const caption = course ? `새빛지역 · ${teamLabel} · 43년 ${course.label} · ${weekLabel} · 섭외유형별 찾기 수` : "";
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
       <PageHeader
         title="섭외유형 비교"
-        description={<>개강 하나, 주차 하나를 골라 찾기가 어떤 섭외유형으로 이루어졌는지 봐요</>}
+        description={<>개강·주차·팀을 골라 찾기가 어떤 섭외유형으로 이루어졌는지 봐요</>}
         right={<RefreshBar at={dataFetchedAt()} />}
       />
 
-      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} />
+      <CourseWeekPicker courses={courses} course={course} weeks={weeks} week={week} teams={TEAM_IDS} team={team} />
 
-      <CaptureArea className="card space-y-6 p-5" fileName={`섭외유형_${course?.label ?? ""}_${weekLabel}`.replace(/\s/g, "")} caption={caption}>
+      <CaptureArea className="card space-y-6 p-5" fileName={`섭외유형_${course?.label ?? ""}_${weekLabel}${team ? `_${teamLabel}` : ""}`.replace(/\s/g, "")} caption={caption}>
         <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
-          {course?.label} · {weekLabel} <span className="text-xs font-normal text-muted">섭외유형별 찾기 수</span>
+          {course?.label} · {weekLabel}
+          {team && ` · ${teamLabel}`} <span className="text-xs font-normal text-muted">섭외유형별 찾기 수</span>
         </h2>
         {counts.size === 0 ? (
-          <p className="py-16 text-center text-sm text-muted">이 개강·주차에는 찾기 데이터가 없어요.</p>
+          <p className="py-16 text-center text-sm text-muted">{team ? `${teamLabel}은 ` : ""}이 개강·주차에 찾기 데이터가 없어요.</p>
         ) : (
           <DonutChart slices={slices} />
         )}
@@ -65,11 +72,12 @@ export default async function ChannelsPage({ searchParams }: PageProps<"/channel
       {course && weeks.length > 0 && (
         <CaptureArea
           className="card space-y-5 p-5"
-          fileName={`섭외유형_주차별비율_${course.label}`.replace(/\s/g, "")}
-          caption={`새빛지역 · 43년 ${course.label} · 주차별 섭외유형 비율`}
+          fileName={`섭외유형_주차별비율_${course.label}${team ? `_${teamLabel}` : ""}`.replace(/\s/g, "")}
+          caption={`새빛지역 · ${teamLabel} · 43년 ${course.label} · 주차별 섭외유형 비율`}
         >
           <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
-            {course.label} 주차별 비율 <span className="text-xs font-normal text-muted">주차마다 섭외유형 구성이 어떻게 바뀌는지 · 줄을 누르면 위 도넛이 그 주차로 바뀌어요</span>
+            {course.label} 주차별 비율
+            {team && ` · ${teamLabel}`} <span className="text-xs font-normal text-muted">주차마다 섭외유형 구성이 어떻게 바뀌는지 · 줄을 누르면 위 도넛이 그 주차로 바뀌어요</span>
           </h2>
           <StackedShare categories={categories.map((label) => ({ label, color: colorOf(categories, label) }))} rows={shareRows} />
         </CaptureArea>

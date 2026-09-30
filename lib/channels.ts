@@ -3,7 +3,7 @@ import { readColumns } from "./google";
 import { describeCourse, FIRST_YEAR, WEEK_PATTERN } from "./weekly";
 
 // '새빛 찾기 체계'의 '누적추이 계산용 시트(수정금지)'에서
-// B열(찾기 주차)로 개강·주차를 나누고 F열(섭외유형)별 찾기 수를 셈.
+// B열(찾기 주차)로 개강·주차를 나누고 F열(섭외유형)별 찾기 수를 셈. C열(팀-구역, 예: "3-2")로 팀도 나눔.
 // 개강은 찾기 주차 가운데의 "N월"로 판단 (예: "43년 9월 8주차" → 43년 9월 개강 8주차)
 
 export const OTHER = "기타";
@@ -15,25 +15,38 @@ export type ChannelCourse = {
   id: string; // "43-9"
   label: string; // "9월 개강"
   order: number;
-  weeks: Map<number, Map<string, number>>; // 주차 → (섭외유형 → 개수)
+  weeks: Map<number, Map<string, number>>; // 주차 → (섭외유형 → 개수), 전체 팀
+  teams: Map<number, Map<number, Map<string, number>>>; // 팀 → 주차 → (섭외유형 → 개수)
 };
 
+export const TEAM_IDS = [1, 2, 3, 4, 5, 6, 7] as const;
+
+// 한 칸(주차별 섭외유형 개수)에 1을 더함
+function bump(weeks: Map<number, Map<string, number>>, week: number, type: string) {
+  const byType = weeks.get(week) ?? new Map<string, number>();
+  byType.set(type, (byType.get(type) ?? 0) + 1);
+  weeks.set(week, byType);
+}
+
 export async function getChannelData() {
-  const [weekCol, typeCol] = await readColumns(process.env.GOOGLE_SHEET_ID!, [
+  const [weekCol, teamCol, typeCol] = await readColumns(process.env.GOOGLE_SHEET_ID!, [
     "'누적추이 계산용 시트(수정금지)'!B2:B",
+    "'누적추이 계산용 시트(수정금지)'!C2:C",
     "'누적추이 계산용 시트(수정금지)'!F2:F",
   ]);
   const weeksRaw = weekCol[0] ?? [];
+  const teamsRaw = teamCol[0] ?? [];
   const typesRaw = typeCol[0] ?? [];
 
   // 1) 43년 이후 찾기만 모아서 섭외유형 전체 순위를 구함 (색은 이 순위로 고정)
-  const rows: { year: number; month: string; week: number; type: string }[] = [];
+  const rows: { year: number; month: string; week: number; team: number | null; type: string }[] = [];
   const totals = new Map<string, number>();
   for (let i = 0; i < weeksRaw.length; i++) {
     const m = String(weeksRaw[i] ?? "").trim().match(WEEK_PATTERN);
     if (!m || Number(m[1]) < FIRST_YEAR) continue;
     const type = String(typesRaw[i] ?? "").trim() || OTHER;
-    rows.push({ year: Number(m[1]), month: m[2], week: Number(m[3]), type });
+    const team = Number(String(teamsRaw[i] ?? "").trim().match(/^(\d+)-/)?.[1]) || null;
+    rows.push({ year: Number(m[1]), month: m[2], week: Number(m[3]), team, type });
     totals.set(type, (totals.get(type) ?? 0) + 1);
   }
   const ranked = [...totals].sort((a, b) => b[1] - a[1]);
@@ -51,13 +64,16 @@ export async function getChannelData() {
     let course = courses.get(id);
     if (!course) {
       const { label, order } = describeCourse(r.month);
-      course = { id, label, order: r.year * 100 + order, weeks: new Map() };
+      course = { id, label, order: r.year * 100 + order, weeks: new Map(), teams: new Map() };
       courses.set(id, course);
     }
-    const byType = course.weeks.get(r.week) ?? new Map<string, number>();
     const cat = grouped.get(r.type)!;
-    byType.set(cat, (byType.get(cat) ?? 0) + 1);
-    course.weeks.set(r.week, byType);
+    bump(course.weeks, r.week, cat);
+    if (r.team) {
+      const teamWeeks = course.teams.get(r.team) ?? new Map();
+      course.teams.set(r.team, teamWeeks);
+      bump(teamWeeks, r.week, cat);
+    }
   }
 
   // 기타로 묶인 원래 유형 이름 (안내용)

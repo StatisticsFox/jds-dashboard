@@ -12,9 +12,25 @@ export function selectCourseWeek<T extends PickCourse>(courses: T[], params: Rec
   return { course, weeks, week, weekLabel: week === "all" ? "전체 주차" : `${week}주차` };
 }
 
-// 개강 칩 한 줄 + 주차 칩 한 줄 (섭외유형·타찾 탈락 탭 공용)
-export function CourseWeekPicker({ courses, course, weeks, week }: { courses: PickCourse[]; course?: PickCourse; weeks: number[]; week?: WeekChoice }) {
+// 개강 칩 한 줄 + 주차 칩 한 줄 (섭외유형·타찾 탈락 탭 공용).
+// teams를 넘기면 팀 칩 줄(전체·1~7팀)도 붙음. 고른 팀은 ?t=3, 전체면 주소에서 뺌
+export function CourseWeekPicker({
+  courses,
+  course,
+  weeks,
+  week,
+  teams,
+  team,
+}: {
+  courses: PickCourse[];
+  course?: PickCourse;
+  weeks: number[];
+  week?: WeekChoice;
+  teams?: readonly number[];
+  team?: number;
+}) {
   const year = course?.id.split("-")[0] ?? "";
+  const t = team ? { t: team } : {};
   return (
     <section className="card space-y-3 p-5">
       <ChipRow label={`${year}년 개강`}>
@@ -22,7 +38,7 @@ export function CourseWeekPicker({ courses, course, weeks, week }: { courses: Pi
           // 개강을 바꾸면 같은 주차가 있으면 유지, 없으면 그 개강의 기본 주차
           const keepWeek = week === "all" || (week !== undefined && c.weeks.has(week)) ? String(week) : undefined;
           return (
-            <Chip key={c.id} href={{ query: { c: c.id, ...(keepWeek && { w: keepWeek }) } }} active={c.id === course?.id}>
+            <Chip key={c.id} href={{ query: { c: c.id, ...(keepWeek && { w: keepWeek }), ...t } }} active={c.id === course?.id}>
               {c.label.replace(" 개강", "")}
             </Chip>
           );
@@ -30,11 +46,20 @@ export function CourseWeekPicker({ courses, course, weeks, week }: { courses: Pi
       </ChipRow>
       <ChipRow label="주차" className="border-t border-grid pt-3">
         {[...weeks.map(String), "all"].map((w) => (
-          <Chip key={w} href={{ query: { c: course?.id, w } }} active={String(week) === w}>
+          <Chip key={w} href={{ query: { c: course?.id, w, ...t } }} active={String(week) === w}>
             {w === "all" ? "전체" : `${w}주차`}
           </Chip>
         ))}
       </ChipRow>
+      {teams && (
+        <ChipRow label="팀" className="border-t border-grid pt-3">
+          {[undefined, ...teams].map((id) => (
+            <Chip key={id ?? "all"} href={{ query: { c: course?.id, ...(week !== undefined && { w: String(week) }), ...(id && { t: id }) } }} active={team === id}>
+              {id ? `${id}팀` : "전체"}
+            </Chip>
+          ))}
+        </ChipRow>
+      )}
     </section>
   );
 }
