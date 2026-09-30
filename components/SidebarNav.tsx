@@ -15,7 +15,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/", label: "팀별 유월율" },
       { href: "/goals", label: "목표 달성" },
-      { href: "/zones", label: "구역별 순위" },
+      { href: "/zones", label: "타찾·상예 구역 순위" },
     ],
   },
   {

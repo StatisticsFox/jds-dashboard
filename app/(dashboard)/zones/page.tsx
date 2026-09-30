@@ -1,211 +1,175 @@
 import { CaptureArea } from "@/components/CaptureArea";
-import { Chip, ChipRow } from "@/components/Chip";
-import { selectCourseWeek } from "@/components/CourseWeekPicker";
+import { Chip } from "@/components/Chip";
 import { PageHeader } from "@/components/PageHeader";
-import { PendingLink } from "@/components/Pending";
 import { RefreshBar } from "@/components/RefreshBar";
 import { TeamChipRow } from "@/components/TeamChips";
-import { preferredCourse } from "@/lib/course-pref";
+import { koreanDate } from "@/lib/access-log";
 import { requireUser } from "@/lib/dal";
 import { dataFetchedAt } from "@/lib/data-time";
-import { formatCount } from "@/lib/format";
 import { pickTeam } from "@/lib/teams";
-import { getZoneData, rankOf, sumWeeks, ZONE_METRIC_KEYS, ZONE_METRICS, type ZoneCounts, type ZoneMetric } from "@/lib/zones";
+import { countByZone, getZoneData, rankOf, toSerial } from "@/lib/zones";
 
-type Unit = "week" | "month";
-const isMetric = (v: unknown): v is ZoneMetric => typeof v === "string" && v in ZONE_METRICS;
-const ZERO: ZoneCounts = { tachat: 0, sangye: 0, sangdam: 0, yuk: 0 };
+const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const MEDALS = ["🥇", "🥈", "🥉"];
 
-// 1~3위 표시 색
-const MEDAL = ["bg-[#f5c542] text-[#3d2e00]", "bg-[#c9d1d9] text-[#1f2a33]", "bg-[#e0a370] text-[#3a1f08]"];
+// "2026-09-21" → "9. 21."
+const shortDate = (iso: string) => {
+  const [, m, d] = iso.split("-").map(Number);
+  return `${m}. ${d}.`;
+};
 
 export default async function ZonesPage({ searchParams }: PageProps<"/zones">) {
   await requireUser();
   const params = await searchParams;
-  const { months, zones } = await getZoneData();
+  const { tachat, sangye, zones } = await getZoneData();
 
-  // 주간(?u=week, 기본) / 월간(?u=month) · 월(?c=43-9) · 주차(?w=8) · 순위 기준(?m=tachat) · 팀(?t=3)
-  const unit: Unit = params.u === "month" ? "month" : "week";
-  const { course: month, weeks, week } = selectCourseWeek(months, params, await preferredCourse());
-  const weekNo = typeof week === "number" ? week : weeks.at(-1);
-  const metric: ZoneMetric = isMetric(params.m) ? params.m : "tachat";
+  // 기간(?s=2026-09-21&e=2026-09-27, 기본 최근 7일) · 팀(?t=3) · 타찾 종류(?k=real 실질, 기본 전체)
+  let start = isDate(params.s) ? params.s : koreanDate(6);
+  let end = isDate(params.e) ? params.e : koreanDate();
+  if (start > end) [start, end] = [end, start];
   const { team, teamLabel } = pickTeam(params);
+  const real = params.k === "real";
 
-  const counts = month ? (unit === "month" ? sumWeeks(month.weeks.values()) : (month.weeks.get(weekNo!) ?? new Map<string, ZoneCounts>())) : new Map<string, ZoneCounts>();
-  const valueOf = (zone: string, k: ZoneMetric) => (counts.get(zone) ?? ZERO)[k];
-  // 순위는 지역 전체 구역 기준 (팀을 골라도 지역 순위 그대로)
-  const ranks = Object.fromEntries(ZONE_METRIC_KEYS.map((k) => [k, rankOf(new Map(zones.map((z) => [z, valueOf(z, k)])))])) as Record<ZoneMetric, Map<string, number>>;
+  const from = toSerial(start);
+  const to = toSerial(end);
+  const tachatCounts = countByZone(real ? tachat.filter((r) => r.real) : tachat, zones, from, to);
+  const sangyeCounts = countByZone(sangye, zones, from, to);
 
-  const shown = zones.filter((z) => !team || z.startsWith(`${team}-`));
-  const rows = [...shown].sort((a, b) => valueOf(b, metric) - valueOf(a, metric));
-  const max = Math.max(1, ...zones.map((z) => valueOf(z, metric)));
-  const totals = Object.fromEntries(ZONE_METRIC_KEYS.map((k) => [k, shown.reduce((s, z) => s + valueOf(z, k), 0)])) as ZoneCounts;
-
-  const periodLabel = month ? (unit === "month" ? `${month.label} 월간` : `${month.label} ${weekNo}주차`) : "";
+  const period = `${start.replaceAll("-", ". ")}. ~ ${shortDate(end)}`;
   const teamSuffix = team ? ` · ${teamLabel}` : "";
-
-  // 칩 주소: 지금 선택을 유지하고 일부만 바꿈 (기본값·전체 팀은 주소에서 뺌)
-  const href = (next: { u?: Unit; c?: string; w?: number; m?: ZoneMetric; t?: number | null }) => {
-    const q = { u: unit, c: month?.id, w: weekNo, m: metric, t: team as number | null | undefined, ...next };
-    return {
-      query: {
-        ...(q.u === "month" && { u: "month" }),
-        c: q.c,
-        ...(q.u === "week" && q.w !== undefined && { w: q.w }),
-        ...(q.m !== "tachat" && { m: q.m }),
-        ...(q.t && { t: q.t }),
-      },
-    };
+  const query = (next: { t?: number | null; k?: "all" | "real" }) => {
+    const t = next.t === undefined ? team : next.t;
+    const k = next.k ?? (real ? "real" : "all");
+    return { query: { s: start, e: end, ...(t && { t }), ...(k === "real" && { k }) } };
   };
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
       <PageHeader
-        title="구역별 순위"
-        description={<>주간·월간으로 구역마다 타찾·상예·상담·따기 수와 지역 순위를 봐요</>}
+        title="타찾·상예 구역별 순위"
+        description={<>기간과 팀을 골라 구역마다 타찾·상예 수와 지역 순위를 봐요</>}
         right={<RefreshBar at={dataFetchedAt()} />}
       />
 
       <section className="card space-y-3 p-5">
-        <ChipRow label="기간">
-          <Chip href={href({ u: "week" })} active={unit === "week"}>
-            주간
-          </Chip>
-          <Chip href={href({ u: "month" })} active={unit === "month"}>
-            월간
-          </Chip>
-        </ChipRow>
-        <ChipRow label={`${month?.id.split("-")[0] ?? ""}년 월`} className="border-t border-grid pt-3">
-          {months.map((m) => (
-            <Chip key={m.id} href={href({ c: m.id, w: weekNo !== undefined && m.weeks.has(weekNo) ? weekNo : undefined })} active={m.id === month?.id}>
-              {m.label}
-            </Chip>
-          ))}
-        </ChipRow>
-        {unit === "week" && (
-          <ChipRow label="주차" className="border-t border-grid pt-3">
-            {weeks.map((w) => (
-              <Chip key={w} href={href({ w })} active={w === weekNo}>
-                {w}주차
-              </Chip>
-            ))}
-          </ChipRow>
-        )}
-        <TeamChipRow team={team} href={(t) => href({ t: t ?? null })} />
-        <ChipRow label="순위 기준" className="border-t border-grid pt-3">
-          {ZONE_METRIC_KEYS.map((k) => (
-            <Chip key={k} href={href({ m: k })} active={k === metric}>
-              {ZONE_METRICS[k]}
-            </Chip>
-          ))}
-        </ChipRow>
+        {/* 제출하면 ?s=…&e=… 주소로 이동 (팀·타찾 종류는 그대로) */}
+        <form className="flex flex-wrap items-end gap-x-4 gap-y-3 text-sm">
+          {team && <input type="hidden" name="t" value={team} />}
+          {real && <input type="hidden" name="k" value="real" />}
+          <fieldset>
+            <legend className="mb-1.5 font-medium">기간</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              <input type="date" name="s" defaultValue={start} aria-label="시작 날짜" className="field px-2.5 py-1.5" />
+              <span className="text-muted">~</span>
+              <input type="date" name="e" defaultValue={end} aria-label="마지막 날짜" className="field px-2.5 py-1.5" />
+            </div>
+          </fieldset>
+          <button className="btn-primary px-5 py-2">적용하기</button>
+        </form>
+        <TeamChipRow team={team} href={(t) => query({ t: t ?? null })} />
       </section>
 
-      {/* 지표별 1위 구역 */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {ZONE_METRIC_KEYS.map((k) => {
-          const best = Math.max(0, ...zones.map((z) => valueOf(z, k)));
-          const winners = best > 0 ? zones.filter((z) => valueOf(z, k) === best) : [];
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RankCard
+          title={`타찾 순위${real ? " (실질)" : " (전체)"}`}
+          note={real ? "정파만남이 아닌 타찾만 · 타찾 보고 날짜 기준" : "정파만남 포함 모든 타찾 · 타찾 보고 날짜 기준"}
+          toggle={
+            <>
+              <Chip href={query({ k: "all" })} active={!real}>
+                전체
+              </Chip>
+              <Chip href={query({ k: "real" })} active={real}>
+                실질
+              </Chip>
+            </>
+          }
+          counts={tachatCounts}
+          team={team}
+          fileName={`타찾${real ? "실질" : ""}_구역순위_${start}_${end}${team ? `_${teamLabel}` : ""}`}
+          caption={`새빛지역${teamSuffix} · ${period} · 구역별 타찾${real ? " 실질" : ""} 순위`}
+        />
+        <RankCard
+          title="상예 순위"
+          note="상담 예정 이상 열매 · 열매누적 입력 날짜 · 인도 팀-구역 기준"
+          counts={sangyeCounts}
+          team={team}
+          fileName={`상예_구역순위_${start}_${end}${team ? `_${teamLabel}` : ""}`}
+          caption={`새빛지역${teamSuffix} · ${period} · 구역별 상예 순위`}
+        />
+      </div>
+
+      <p className="text-xs text-muted">
+        순위는 팀을 골라도 지역 전체 {zones.length}개 구역 중 순위예요. 같은 수는 같은 순위이고, 1~3위에는 메달이 붙어요. 기간은 시작·마지막 날짜를 모두 포함해요.
+      </p>
+    </main>
+  );
+}
+
+// 지표 하나의 구역 순위 카드: 메달·순위 · 구역 · 막대 · 수
+function RankCard({
+  title,
+  note,
+  toggle,
+  counts,
+  team,
+  fileName,
+  caption,
+}: {
+  title: string;
+  note: string;
+  toggle?: React.ReactNode;
+  counts: Map<string, number>;
+  team?: number;
+  fileName: string;
+  caption: string;
+}) {
+  const ranks = rankOf(counts);
+  const max = Math.max(1, ...counts.values());
+  const zones = [...counts.keys()].filter((z) => !team || z.startsWith(`${team}-`));
+  const rows = zones.sort((a, b) => counts.get(b)! - counts.get(a)!);
+  const total = rows.reduce((s, z) => s + counts.get(z)!, 0);
+
+  return (
+    <CaptureArea className="card space-y-4 p-5" fileName={fileName.replace(/\s/g, "")} caption={caption}>
+      <div className="space-y-2 pr-36 sm:pr-40">
+        <h2 className="text-base">{title}</h2>
+        <p className="text-xs text-muted">{note}</p>
+        {toggle && (
+          <div data-capture-ignore className="flex flex-wrap gap-1.5 pt-1">
+            {toggle}
+          </div>
+        )}
+      </div>
+
+      <ol className="space-y-0.5 text-sm tabular-nums">
+        {rows.map((z) => {
+          const n = counts.get(z)!;
+          const rank = ranks.get(z)!;
           return (
-            <PendingLink key={k} href={href({ m: k })} className={`card block p-4 transition-colors hover:border-accent ${k === metric ? "border-accent" : ""}`}>
-              <div className="text-xs text-muted">{ZONE_METRICS[k]} 1위 (지역)</div>
-              <div className="mt-1 truncate font-cute text-2xl tabular-nums" title={winners.join(", ")}>
-                {winners.length ? winners.join(" · ") : "–"}
-              </div>
-              <div className="mt-0.5 text-xs text-muted">{best > 0 ? `${formatCount(best)}명` : "기록 없음"}</div>
-            </PendingLink>
+            <li key={z} className="grid grid-cols-[2.5rem_3rem_1fr_2.5rem] items-center gap-2 rounded-md px-1 py-1.5 hover:bg-accent-soft/40">
+              <span className="text-center">
+                {n > 0 && rank <= 3 ? (
+                  <span className="text-xl leading-none" role="img" aria-label={`${rank}위`}>
+                    {MEDALS[rank - 1]}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted">{n > 0 ? `${rank}위` : "–"}</span>
+                )}
+              </span>
+              <span className="font-semibold">{z}</span>
+              <span className="h-2.5 overflow-hidden rounded-full bg-grid">
+                <span className="block h-full rounded-full bg-accent" style={{ width: `${(n / max) * 100}%` }} />
+              </span>
+              <span className={`text-right font-semibold ${n ? "" : "text-muted"}`}>{n}</span>
+            </li>
           );
         })}
-      </section>
+      </ol>
 
-      <CaptureArea
-        className="card space-y-4 p-5"
-        fileName={`구역별순위_${periodLabel}_${ZONE_METRICS[metric]}${team ? `_${teamLabel}` : ""}`.replace(/\s/g, "")}
-        caption={`새빛지역${teamSuffix} · 43년 ${periodLabel} · 구역별 ${ZONE_METRICS[metric]} 순위`}
-      >
-        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
-          {periodLabel}
-          {teamSuffix} · {ZONE_METRICS[metric]} 순위
-          <span className="text-xs font-normal text-muted">열 이름을 누르면 그 기준으로 정렬돼요 · 작은 숫자는 지역 {zones.length}개 구역 중 순위</span>
-        </h2>
-
-        <div className="-mx-5 overflow-x-auto px-5">
-          <table className="w-full min-w-[620px] text-sm tabular-nums">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted">
-                <th className="w-14 py-2 text-left font-medium">순위</th>
-                <th className="w-20 py-2 text-left font-medium">구역</th>
-                {ZONE_METRIC_KEYS.map((k) => (
-                  <th key={k} className={`py-2 text-right font-medium ${k === metric ? "w-[34%]" : ""}`}>
-                    <PendingLink href={href({ m: k })} className={`rounded px-1 hover:text-foreground ${k === metric ? "font-semibold text-accent-strong" : ""}`}>
-                      {ZONE_METRICS[k]}
-                      {k === metric && " ▼"}
-                    </PendingLink>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((z) => {
-                const rank = ranks[metric].get(z)!;
-                const v = valueOf(z, metric);
-                return (
-                  <tr key={z} className="border-b border-grid last:border-0 hover:bg-accent-soft/40">
-                    <td className="py-2">
-                      <span
-                        className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1 text-xs font-semibold ${
-                          v > 0 && rank <= 3 ? MEDAL[rank - 1] : "text-muted"
-                        }`}
-                      >
-                        {v > 0 ? rank : "–"}
-                      </span>
-                    </td>
-                    <td className="py-2 font-semibold">{z}</td>
-                    {ZONE_METRIC_KEYS.map((k) => {
-                      const n = valueOf(z, k);
-                      if (k === metric) {
-                        return (
-                          <td key={k} className="py-2 pl-3">
-                            <div className="flex items-center gap-2">
-                              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-grid">
-                                <div className="h-full rounded-full bg-accent" style={{ width: `${(n / max) * 100}%` }} />
-                              </div>
-                              <span className="w-10 text-right font-semibold">{formatCount(n)}</span>
-                            </div>
-                          </td>
-                        );
-                      }
-                      return (
-                        <td key={k} className={`py-2 text-right ${n ? "" : "text-muted"}`}>
-                          {formatCount(n)}
-                          <span className="ml-1 inline-block w-8 text-left text-[11px] text-muted">{n ? `${ranks[k].get(z)}위` : ""}</span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-border text-muted">
-                <td className="pt-2" />
-                <td className="pt-2 font-medium">{team ? `${teamLabel} 합계` : "지역 합계"}</td>
-                {ZONE_METRIC_KEYS.map((k) => (
-                  <td key={k} className={`pt-2 text-right ${k === metric ? "font-semibold text-foreground" : ""}`}>
-                    {formatCount(totals[k])}
-                    {k !== metric && <span className="ml-1 inline-block w-8" />}
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <p className="text-xs text-muted">
-          타찾은 찾기 주차(누적추이 계산용 시트), 상담은 비상 주차, 따기는 육따기 컨펌 주차 기준이에요(역할마다 한 줄이라 한 줄 = 0.5명). 상예는 주차 칸이 없어
-          열매누적의 입력 날짜를 그 날짜의 찾기·상담 주차로 맞춰 세요(단계가 &lsquo;찾기&rsquo;인 행은 제외). 월간은 주차 이름의 &lsquo;N월&rsquo;이 같은 주차를 모두 더한 값이에요.
-        </p>
-      </CaptureArea>
-    </main>
+      <div className="flex justify-between border-t border-border px-1 pt-2 text-sm text-muted">
+        <span>{team ? `${team}팀 합계` : "지역 합계"}</span>
+        <span className="font-semibold text-foreground tabular-nums">{total}명</span>
+      </div>
+    </CaptureArea>
   );
 }
