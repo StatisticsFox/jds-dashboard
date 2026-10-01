@@ -12,7 +12,7 @@ import { getRegionConversion, type CourseConversion } from "@/lib/region-convers
 
 // 개강 하나의 단계별 인원 (지역 전체)
 // 타찾·상예·상담·따기: 유월율 파일 (팀별 유월율 탭과 같은 계산, 타찾은 실질, 따기 = 육따기 누적)
-// 전→복 이관·OT·센터등록: '43년 센터등록 명단 및 유월율' 파일 (이관 = 육따기 최대 수치)
+// 이관(전도 → 복음방)·OT·센터등록: '43년 센터등록 명단 및 유월율' 파일 (이관 = 육따기 최대 수치)
 //   육따기 열매는 전도 파트에서 복음방 파트로 넘어가는데, 넘어간 뒤 복음방 파트에서 올리지 않는 열매가 있어 따기보다 줄어듦
 type Funnel = { tachat: number; sangye: number; sangdam: number; yuk: number; transfer: number | null; ot: number | null; center: number | null };
 
@@ -32,7 +32,7 @@ const RATES: { key: string; label: string; from: keyof Funnel; to: keyof Funnel;
   { key: "tachatSangye", label: "타찾 → 상예", from: "tachat", to: "sangye", fromLabel: "타찾", toLabel: "상예" },
   { key: "sangyeSangdam", label: "상예 → 상담", from: "sangye", to: "sangdam", fromLabel: "상예", toLabel: "상담" },
   { key: "sangdamYuk", label: "상담 → 따기", from: "sangdam", to: "yuk", fromLabel: "상담", toLabel: "따기" },
-  { key: "yukTransfer", label: "따기 → 전→복 이관", from: "yuk", to: "transfer", fromLabel: "따기", toLabel: "이관" },
+  { key: "yukTransfer", label: "이관성공율 (따기 → 이관)", from: "yuk", to: "transfer", fromLabel: "따기", toLabel: "이관" },
   { key: "transferOt", label: "이관 → OT", from: "transfer", to: "ot", fromLabel: "이관", toLabel: "OT" },
   { key: "otCenter", label: "OT → 센터등록", from: "ot", to: "center", fromLabel: "OT", toLabel: "센터등록" },
 ];
@@ -72,7 +72,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
         { label: "상예", value: f.sangye, color: "var(--stage-sangye)" },
         { label: "상담", value: f.sangdam, color: "var(--stage-sangdam)" },
         { label: "따기", value: f.yuk, color: "var(--stage-yuk)", unit: "" },
-        { label: "전→복 이관", value: f.transfer, color: "var(--stage-transfer)", unit: "" },
+        { label: "이관", value: f.transfer, color: "var(--stage-transfer)", unit: "" },
         { label: "OT", value: f.ot, color: "var(--stage-ot)", unit: "" },
         { label: "센터등록", value: f.center, color: "var(--stage-center)", unit: "" },
       ]
@@ -146,7 +146,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
             <FunnelBars steps={steps} />
             <p className="text-xs text-muted">
               타찾(실질)·상예·상담·따기는 팀별 유월율 탭과 같은 계산이에요 (기간 {course.settings.tachatStart.slice(5).replace("-", ".")}~{course.settings.tachatEnd.slice(5).replace("-", ".")}
-              {course.official ? "" : ", 추정 기간"}, 따기 = 육따기 누적). 전→복 이관·OT·센터등록은 &lsquo;43년 센터등록 명단 및 유월율&rsquo; 시트의 육따기 최대 수치·OT·센터등록이에요.
+              {course.official ? "" : ", 추정 기간"}, 따기 = 육따기 누적). 이관·OT·센터등록은 &lsquo;43년 센터등록 명단 및 유월율&rsquo; 시트의 육따기 최대 수치·OT·센터등록이에요.
               육따기 열매는 전도 파트에서 복음방 파트로 이관되는데, 이관 뒤 복음방 파트에서 따로 올리지 않는 열매가 있어 따기보다 줄어들어요. 아직 집계 전인 단계는 점선 막대로 표시해요.
             </p>
           </CaptureArea>
