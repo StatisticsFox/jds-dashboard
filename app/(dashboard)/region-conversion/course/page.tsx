@@ -104,7 +104,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
             <h2 className="flex flex-wrap items-baseline gap-x-2 pr-36 text-base sm:pr-40">
               {course.label} 단계별 유월율 <span className="text-xs font-normal text-muted">아래 작은 글씨는 {prev ? `바로 전 ${prev.label}` : "(43년 첫 개강이라 전 개강 없음)"}과 43년 평균(진행 중 개강 제외)에 비교한 값</span>
             </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               {RATES.map((r) => {
                 const v = rateOf(f, r.from, r.to);
                 const before = prevFunnel ? rateOf(prevFunnel, r.from, r.to) : null;
@@ -123,13 +123,13 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
                         : `${r.toLabel} ${formatCount(f[r.to] as number)} ÷ ${r.fromLabel} ${formatCount(f[r.from] as number)}`}
                     </div>
                     {diff !== null && (
-                      <div className={`mt-0.5 text-xs font-medium tabular-nums ${diff >= 0 ? "text-good" : "text-bad"}`}>
+                      <div className={`mt-0.5 whitespace-nowrap text-xs font-medium tabular-nums ${diff >= 0 ? "text-good" : "text-bad"}`}>
                         {prev!.label.replace(" 개강", "")} {formatRate(before)} 대비 {formatRateDiff(diff)}
                       </div>
                     )}
                     {avgDiff !== null && (
-                      <div className={`mt-0.5 text-xs font-medium tabular-nums ${avgDiff >= 0 ? "text-good" : "text-bad"}`}>
-                        평균 {formatRate(avg)} 대비 {formatRateDiff(avgDiff)}
+                      <div className={`mt-0.5 whitespace-nowrap text-xs font-medium tabular-nums ${avgDiff >= 0 ? "text-good" : "text-bad"}`}>
+                        43년 평균 {formatRate(avg)} 대비 {formatRateDiff(avgDiff)}
                       </div>
                     )}
                   </div>
