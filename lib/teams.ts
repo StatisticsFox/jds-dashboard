@@ -18,6 +18,12 @@ export function zoneOf(v: unknown): string | null {
 // 팀-구역 칸 → 팀 번호 3. 형식이 다르면 null
 export const teamOf = (v: unknown) => Number(zoneOf(v)?.split("-")[0]) || null;
 
+// 주소의 ?t=3&t=5 → [3, 5] (팀 번호 순, 중복·잘못된 값 제외). 없으면 [] (전체 팀)
+export function pickTeams(params: Record<string, string | string[] | undefined>) {
+  const raw = [params.t ?? []].flat();
+  return TEAM_IDS.filter((t) => raw.includes(String(t)));
+}
+
 // 주소의 ?t=3 → 3, 없거나 1~7이 아니면 undefined(전체 팀)
 export function pickTeam(params: Record<string, string | string[] | undefined>) {
   const team = TEAM_IDS.find((t) => String(t) === params.t);

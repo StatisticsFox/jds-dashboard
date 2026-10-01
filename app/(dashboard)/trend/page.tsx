@@ -5,12 +5,12 @@ import { CaptureArea } from "@/components/CaptureArea";
 import { Chip, ChipRow } from "@/components/Chip";
 import { CrossTable } from "@/components/CrossTable";
 import { PageHeader } from "@/components/PageHeader";
-import { TeamChipRow } from "@/components/TeamChips";
-import { pickTeam, TEAM_IDS } from "@/lib/teams";
+import { pickTeams, TEAM_IDS } from "@/lib/teams";
 import { LineChart } from "@/components/LineChart";
 import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import {
+  type Course,
   getCourses,
   SANGYE_LABEL,
   WEEKLY_METRICS,
@@ -37,9 +37,10 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   // 지표 (?m=find|sangdam). 없으면 찾기
   const metric: WeeklyMetric = isMetric(params.m) ? params.m : "find";
   const metricLabel = metric === "sangye" ? SANGYE_LABEL : WEEKLY_METRICS[metric].label;
-  // 팀 (?t=3). 없으면 지역 전체
-  const { team, teamLabel } = pickTeam(params);
-  const courses = await getCourses(metric, team);
+  // 팀 (?t=3, 개강이 하나면 ?t=3&t=5처럼 여러 팀). 없으면 지역 전체
+  const requestedTeams = pickTeams(params);
+  // 개강 목록·팀 평균은 지역 전체 기준 (개강·주차 목록은 팀과 상관없이 같음)
+  const courses = await getCourses(metric);
 
   // 년도: 주소에 없으면 데이터의 가장 최근 년도 (지금은 43년)
   const years = [...new Set(courses.map((c) => c.year))].sort((a, b) => b - a);
@@ -68,21 +69,42 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   const selected = yearCourses.filter((c) => selectedIds.has(c.id));
   const color = (i: number) => `var(--cat-${i + 1})`;
 
+  // 개강이 하나면 팀을 여러 개 골라 비교 (선 = 팀, 색 = 팀 번호), 개강이 여럿이면 팀은 하나만 (선 = 개강)
+  const multiTeam = selected.length === 1;
+  const teams: number[] = multiTeam ? requestedTeams : requestedTeams.slice(0, 1);
+  const teamColor = (t: number) => `var(--cat-${t})`;
+  type Line = { id: string; label: string; color: string; course: Course };
+  let lines: Line[];
+  if (!teams.length) {
+    lines = selected.map((c, i) => ({ id: c.id, label: c.label, color: color(i), course: c }));
+  } else if (multiTeam) {
+    const perTeam = await Promise.all(teams.map((t) => getCourses(metric, t)));
+    lines = teams.map((t, i) => ({
+      id: `team-${t}`,
+      label: `${t}팀`,
+      color: teamColor(t),
+      course: perTeam[i].find((c) => c.id === selected[0].id) ?? { ...selected[0], weeks: new Map() },
+    }));
+  } else {
+    const teamCourses = await getCourses(metric, teams[0]);
+    lines = selected.map((c, i) => ({ id: c.id, label: c.label, color: color(i), course: teamCourses.find((x) => x.id === c.id) ?? { ...c, weeks: new Map() } }));
+  }
+
   // 그래프·표는 누적 값. 그 주차에 새로 늘어난 수(weekly)는 툴팁과 표에 작게 함께 표시
-  const { weeks, cumulative, weekly } = weeklyTable(selected);
-  const series: { id: string; label: string; color: string; values: (number | null)[]; deltas: (number | null)[]; dashed?: boolean }[] = selected.map((c, i) => ({
-    id: c.id,
-    label: c.label,
-    color: color(i),
+  const { weeks, cumulative, weekly } = weeklyTable(lines.map((l) => l.course));
+  const series: { id: string; label: string; color: string; values: (number | null)[]; deltas: (number | null)[]; dashed?: boolean }[] = lines.map((l, i) => ({
+    id: l.id,
+    label: l.label,
+    color: l.color,
     values: cumulative[i],
     deltas: weekly[i],
   }));
 
-  // 개강 하나 + 팀 하나를 골랐을 때만: 같은 개강의 팀 평균(지역 전체 ÷ 7팀) 점선을 함께 그림
+  // 개강 하나 + 팀을 골랐을 때만: 같은 개강의 팀 평균(지역 전체 ÷ 7팀) 점선을 함께 그림
   let average: { cumulative: (number | null)[]; weekly: (number | null)[] } | null = null;
-  if (team && selected.length === 1) {
-    const region = (await getCourses(metric)).find((c) => c.id === selected[0].id);
-    if (region) {
+  if (teams.length && selected.length === 1) {
+    const region = selected[0];
+    {
       const t = weeklyTable([region]);
       const perTeam = (v: number | null) => (v === null ? null : Math.round((v / TEAM_IDS.length) * 10) / 10);
       // 주차 축은 팀·지역 모두 지역 전체 기준이라 같음
@@ -92,16 +114,18 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   }
 
   // 선택이 비면 c를 빈 값으로 남겨서 "선택 없음"을 기억 (없애면 처음 방문처럼 기본값이 다시 선택됨)
-  const colOf = (id: string) => selected.findIndex((c) => c.id === id);
-  // t: 팀을 바꿀 때만 넘김 (null = 전체). 넘기지 않으면 지금 팀 유지
-  const hrefWith = (ids: string[], m: string = metric, t: number | null | undefined = team) => ({
-    query: { m, year, c: ids.length ? ids : "", ...(t && { t }) },
+  // ts: 팀을 바꿀 때만 넘김 ([] = 전체). 넘기지 않으면 지금 고른 팀 유지 (개강을 여럿 골라도 주소에는 남겨 둬서, 다시 하나로 줄이면 복원)
+  const hrefWith = (ids: string[], m: string = metric, ts: readonly number[] = requestedTeams) => ({
+    query: { m, year, c: ids.length ? ids : "", ...(ts.length && { t: ts.map(String) }) },
   });
+  const toggleTeam = (t: number) => (teams.includes(t) ? teams.filter((x) => x !== t) : [...teams, t]);
   const toggle = (id: string) =>
     selectedIds.has(id)
       ? [...selectedIds].filter((x) => x !== id)
       : [...selectedIds, id];
-  const teamSuffix = team ? ` · ${teamLabel}` : "";
+  const teamLabel = teams.map((t) => `${t}팀`).join("·");
+  // 팀 비교(개강 하나)일 때는 선이 팀이라 제목에 개강 이름도 붙임
+  const teamSuffix = !teams.length ? "" : multiTeam ? ` · ${selected[0].label} · ${teamLabel}` : ` · ${teamLabel}`;
   const caption = `새빛지역${teamSuffix} · ${year}년 · 개강별 동주차 누적 ${metricLabel} 인원 · ${selected.map((c) => c.label).join(", ")}`;
 
   return (
@@ -151,7 +175,7 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                 active={on}
                 multi
                 dot={
-                  on
+                  on && !(multiTeam && teams.length)
                     ? color(selected.findIndex((s) => s.id === c.id))
                     : undefined
                 }
@@ -186,12 +210,30 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
             모두 해제
           </PendingLink>
         </div>
-        <TeamChipRow team={team} href={(t) => hrefWith([...selectedIds], metric, t ?? null)} />
+        <ChipRow label="팀" className="border-t border-grid pt-3">
+          <Chip href={hrefWith([...selectedIds], metric, [])} active={!teams.length}>
+            전체
+          </Chip>
+          {TEAM_IDS.map((t) =>
+            multiTeam ? (
+              <Chip key={t} href={hrefWith([...selectedIds], metric, toggleTeam(t))} active={teams.includes(t)} multi dot={teams.includes(t) ? teamColor(t) : undefined}>
+                {t}팀
+              </Chip>
+            ) : (
+              <Chip key={t} href={hrefWith([...selectedIds], metric, [t])} active={teams[0] === t}>
+                {t}팀
+              </Chip>
+            ),
+          )}
+        </ChipRow>
+        <p className="pl-0.5 text-xs text-muted sm:pl-[4.75rem]">
+          {multiTeam ? "개강을 하나만 골라서 팀을 여러 개 골라 비교할 수 있어요" : "개강을 하나만 고르면 팀을 여러 개 골라 비교할 수 있어요"}
+        </p>
       </section>
 
       <CaptureArea
         className="card space-y-5 p-5"
-        fileName={`동주차_누적${metricLabel}_${year}년${team ? `_${teamLabel}` : ""}`}
+        fileName={`동주차_누적${metricLabel}_${year}년${teams.length ? `_${teamLabel}` : ""}`}
         caption={caption}
       >
         <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
@@ -227,19 +269,19 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                       <th className="sticky left-0 border-b border-border bg-surface py-2 pr-4 text-left font-medium">
                         주차
                       </th>
-                      {selected.map((c, i) => (
+                      {lines.map((l, i) => (
                         <th
-                          key={c.id}
+                          key={l.id}
                           data-r="h"
-                          data-c={colOf(c.id)}
+                          data-c={i}
                           className="border-b border-border px-3 py-2 text-right font-medium"
                         >
                           <span className="inline-flex items-center gap-1.5">
                             <span
                               className="h-2 w-2 rounded-full"
-                              style={{ background: color(i) }}
+                              style={{ background: l.color }}
                             />
-                            {c.label}
+                            {l.label}
                           </span>
                         </th>
                       ))}
@@ -265,13 +307,13 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                         </th>
                         {cumulative.map((col, ci) => (
                           <td
-                            key={selected[ci].id}
+                            key={lines[ci].id}
                             data-r={wi}
                             data-c={ci}
                             data-tip={
                               col[wi] === null
-                                ? `${selected[ci].label} · ${w}주차\n데이터 없음`
-                                : `${selected[ci].label} · ${w}주차\n누적 ${col[wi]!.toLocaleString()}명 (이번 주 +${weekly[ci][wi]!.toLocaleString()})`
+                                ? `${lines[ci].label} · ${w}주차\n데이터 없음`
+                                : `${lines[ci].label} · ${w}주차\n누적 ${col[wi]!.toLocaleString()}명 (이번 주 +${weekly[ci][wi]!.toLocaleString()})`
                             }
                             className="border-b border-grid px-3 py-2 text-right"
                           >
