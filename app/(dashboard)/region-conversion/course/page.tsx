@@ -53,14 +53,9 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
     courses.find((c) => c.id === params.c) ?? courses.find((c) => c.id === pref) ?? courses.filter((c) => !c.ongoing).at(-1) ?? courses.at(-1);
   const f = course ? funnels.get(course.id)! : null;
 
-  // 비교 기준: 진행 중이 아닌 개강들의 평균 유월율 (그 비율을 계산할 수 있는 개강만)
-  const done = courses.filter((c) => !c.ongoing);
-  const average = Object.fromEntries(
-    RATES.map((r) => {
-      const values = done.map((c) => rateOf(funnels.get(c.id)!, r.from, r.to)).filter((v): v is number => v !== null);
-      return [r.key, values.length ? values.reduce((a, b) => a + b, 0) / values.length : null];
-    }),
-  ) as Record<string, number | null>;
+  // 비교 기준: 바로 전 개강 (예: 9월 개강 → 8월 개강). 43년 첫 개강은 비교 대상 없음
+  const prev = course ? courses[courses.findIndex((c) => c.id === course.id) - 1] : undefined;
+  const prevFunnel = prev ? funnels.get(prev.id)! : null;
 
   const steps = f
     ? [
@@ -97,13 +92,13 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
           {/* 단계별 유월율 */}
           <CaptureArea className="card space-y-4 p-5" fileName={`지역유월율_${course.label}_단계별`.replace(/\s/g, "")} caption={`새빛지역 · 43년 ${course.label} · 단계별 유월율`}>
             <h2 className="flex flex-wrap items-baseline gap-x-2 pr-36 text-base sm:pr-40">
-              {course.label} 단계별 유월율 <span className="text-xs font-normal text-muted">아래 작은 글씨는 진행 중이 아닌 개강들의 평균과 비교한 값</span>
+              {course.label} 단계별 유월율 <span className="text-xs font-normal text-muted">{prev ? `아래 작은 글씨는 바로 전 ${prev.label}과 비교한 값` : "43년 첫 개강이라 비교할 전 개강이 없어요"}</span>
             </h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {RATES.map((r) => {
                 const v = rateOf(f, r.from, r.to);
-                const avg = average[r.key];
-                const diff = v !== null && avg !== null ? v - avg : null;
+                const before = prevFunnel ? rateOf(prevFunnel, r.from, r.to) : null;
+                const diff = v !== null && before !== null ? v - before : null;
                 return (
                   <div key={r.key} className="rounded-lg border border-border p-4">
                     <div className="text-xs text-muted">{r.label}</div>
@@ -117,7 +112,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
                     </div>
                     {diff !== null && (
                       <div className={`mt-0.5 text-xs font-medium tabular-nums ${diff >= 0 ? "text-good" : "text-bad"}`}>
-                        평균 {formatRate(avg)} 대비 {formatRateDiff(diff)}
+                        {prev!.label.replace(" 개강", "")} {formatRate(before)} 대비 {formatRateDiff(diff)}
                       </div>
                     )}
                   </div>
