@@ -19,6 +19,7 @@ type Props = {
   unit?: string;
   height?: number;
   legend?: boolean; // 위에 범례 표시: 올리면 그 선만 강조, 누르면 숨김/보임
+  max?: number; // 세로축 끝을 고정 (예: 비율은 100). 값이 이보다 크면 무시하고 자동
 };
 
 const PAD = { top: 16, right: 76, bottom: 30, left: 44 };
@@ -32,6 +33,7 @@ export function LineChart({
   unit = "명",
   height = 320,
   legend = false,
+  max,
 }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
@@ -63,8 +65,9 @@ export function LineChart({
   const all = series.flatMap((s) =>
     s.values.filter((v): v is number => v !== null),
   );
-  const step = niceStep(Math.max(1, ...all) / 4);
-  const top = Math.ceil((Math.max(1, ...all) * 1.05) / step) * step;
+  const fixed = max !== undefined && all.every((v) => v <= max);
+  const step = fixed ? max / 4 : niceStep(Math.max(1, ...all) / 4);
+  const top = fixed ? max : Math.ceil((Math.max(1, ...all) * 1.05) / step) * step;
   const ticks = Array.from(
     { length: Math.round(top / step) + 1 },
     (_, i) => step * i,
