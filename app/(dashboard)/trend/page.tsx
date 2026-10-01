@@ -6,7 +6,7 @@ import { Chip, ChipRow } from "@/components/Chip";
 import { CrossTable } from "@/components/CrossTable";
 import { PageHeader } from "@/components/PageHeader";
 import { TeamChipRow } from "@/components/TeamChips";
-import { pickTeam } from "@/lib/teams";
+import { pickTeam, TEAM_IDS } from "@/lib/teams";
 import { LineChart } from "@/components/LineChart";
 import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
@@ -70,13 +70,26 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
 
   // 그래프·표는 누적 값. 그 주차에 새로 늘어난 수(weekly)는 툴팁과 표에 작게 함께 표시
   const { weeks, cumulative, weekly } = weeklyTable(selected);
-  const series = selected.map((c, i) => ({
+  const series: { id: string; label: string; color: string; values: (number | null)[]; deltas: (number | null)[]; dashed?: boolean }[] = selected.map((c, i) => ({
     id: c.id,
     label: c.label,
     color: color(i),
     values: cumulative[i],
     deltas: weekly[i],
   }));
+
+  // 개강 하나 + 팀 하나를 골랐을 때만: 같은 개강의 팀 평균(지역 전체 ÷ 7팀) 점선을 함께 그림
+  let average: { cumulative: (number | null)[]; weekly: (number | null)[] } | null = null;
+  if (team && selected.length === 1) {
+    const region = (await getCourses(metric)).find((c) => c.id === selected[0].id);
+    if (region) {
+      const t = weeklyTable([region]);
+      const perTeam = (v: number | null) => (v === null ? null : Math.round((v / TEAM_IDS.length) * 10) / 10);
+      // 주차 축은 팀·지역 모두 지역 전체 기준이라 같음
+      average = { cumulative: t.cumulative[0].map(perTeam), weekly: t.weekly[0].map(perTeam) };
+      series.push({ id: "team-average", label: "팀 평균", color: "var(--muted)", values: average.cumulative, deltas: average.weekly, dashed: true });
+    }
+  }
 
   // 선택이 비면 c를 빈 값으로 남겨서 "선택 없음"을 기억 (없애면 처음 방문처럼 기본값이 다시 선택됨)
   const colOf = (id: string) => selected.findIndex((c) => c.id === id);
@@ -230,6 +243,14 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                           </span>
                         </th>
                       ))}
+                      {average && (
+                        <th className="border-b border-border px-3 py-2 text-right font-medium">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="w-3 border-t-2 border-dashed border-muted" />
+                            팀 평균
+                          </span>
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -268,6 +289,18 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                             )}
                           </td>
                         ))}
+                        {average && (
+                          <td className="border-b border-grid px-3 py-2 text-right text-muted">
+                            {average.cumulative[wi] === null ? (
+                              <span className="text-muted/50">–</span>
+                            ) : (
+                              <>
+                                <span className="font-medium">{average.cumulative[wi]!.toLocaleString()}</span>
+                                <span className="ml-1.5 text-xs">+{average.weekly[wi]!.toLocaleString()}</span>
+                              </>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -276,7 +309,8 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
             </CrossTable>
             <p className="text-xs text-muted">
               큰 숫자는 누적 인원, 옆의 +숫자는 그 주차에 새로 늘어난
-              인원이에요. – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고,{" "}
+              인원이에요.{" "}
+              {average && "점선 팀 평균은 같은 개강의 지역 전체 인원을 7팀으로 나눈 값이에요. "} – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고,{" "}
               {metric === "find"
                 ? "찾기 주차(B열)가 빈 행은 세지 않아요."
                 : metric === "sangye"
