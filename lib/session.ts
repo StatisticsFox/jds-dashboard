@@ -92,6 +92,33 @@ export async function getSessionEmail() {
   return typeof payload?.email === "string" ? payload.email : null;
 }
 
+// ── 마스터코드 ────────────────────────────────────────────
+// 이메일 없이 들어오는 공용 코드. 값은 코드에 적지 않고 환경변수 MASTER_CODE에만 둠 (없으면 기능 꺼짐)
+// 세션에는 '지금 마스터코드의 지문'을 넣어 두어서, 환경변수 값을 바꾸면 예전 코드로 들어온 사람은 모두 로그아웃됨
+const masterFingerprint = () => {
+  const code = normalizeCode(process.env.MASTER_CODE ?? "");
+  return code ? createHash("sha256").update(`master:${code}:`).update(secret()).digest("hex") : null;
+};
+
+export function checkMasterCode(code: string) {
+  const expected = masterFingerprint();
+  if (!expected || !normalizeCode(code)) return false;
+  const actual = createHash("sha256").update(`master:${normalizeCode(code)}:`).update(secret()).digest("hex");
+  return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(actual, "hex"));
+}
+
+export async function createMasterSession() {
+  const token = await sign({ master: masterFingerprint() }, SESSION_DAYS * 24 * 60 * 60);
+  (await cookies()).set(SESSION_COOKIE, token, cookieOptions(SESSION_DAYS * 24 * 60 * 60));
+}
+
+// 마스터코드로 들어왔고, 그 코드가 지금도 유효한지
+export async function isMasterSession() {
+  const payload = await verify((await cookies()).get(SESSION_COOKIE)?.value);
+  const current = masterFingerprint();
+  return Boolean(current && typeof payload?.master === "string" && payload.master === current);
+}
+
 export async function deleteSession() {
   (await cookies()).delete(SESSION_COOKIE);
 }

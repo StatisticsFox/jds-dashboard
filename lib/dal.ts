@@ -3,9 +3,12 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { logEvent } from "./access-log";
 import { findAllowedPerson, normalizeEmail } from "./allowlist";
-import { getSessionEmail } from "./session";
+import { getSessionEmail, isMasterSession } from "./session";
 
 export type CurrentUser = { email: string; name: string; admin: boolean };
+
+// 마스터코드로 들어온 사람 (관리자 아님, 접속 기록에는 이 이름으로 남음)
+export const MASTER_USER: CurrentUser = { email: "마스터코드", name: "마스터코드", admin: false };
 
 // 환경변수 ADMIN_EMAILS(쉼표로 구분)에 있는 사람만 관리자
 export function isAdmin(email: string) {
@@ -16,7 +19,7 @@ export function isAdmin(email: string) {
 // (명단에서 빠지면 로그인 쿠키가 남아 있어도 바로 막힘). 한 요청 안에서는 결과를 재사용
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const email = await getSessionEmail();
-  if (!email) return null;
+  if (!email) return (await isMasterSession()) ? MASTER_USER : null;
   const person = await findAllowedPerson(email);
   return person ? { email: person.email, name: person.name || person.email, admin: isAdmin(person.email) } : null;
 });

@@ -1,14 +1,17 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { logEvent } from "@/lib/access-log";
 import { findAllowedPerson, normalizeEmail } from "@/lib/allowlist";
-import { getCurrentUser } from "@/lib/dal";
+import { getCurrentUser, MASTER_USER } from "@/lib/dal";
 import { sendLoginCode } from "@/lib/mailer";
 import { allow } from "@/lib/rate-limit";
 import {
+  checkMasterCode,
   checkPendingCode,
   clearPendingLogin,
+  createMasterSession,
   createSession,
   deleteSession,
   generateCode,
@@ -16,7 +19,7 @@ import {
   startPendingLogin,
 } from "@/lib/session";
 
-export type LoginState = { step: "email" | "code"; email?: string; message?: string; error?: string };
+export type LoginState = { step: "email" | "code" | "master"; email?: string; message?: string; error?: string };
 
 // 1단계: 이메일 입력 → 허용된 사람이면 코드 발송
 // 허용 여부와 관계없이 같은 안내를 보여줘서, 명단에 누가 있는지 알아낼 수 없게 함
@@ -91,6 +94,28 @@ async function verifyCodeStep(formData: FormData): Promise<LoginState> {
   redirect("/notices");
 }
 
+// 마스터코드 확인 → 맞으면 이메일 없이 로그인
+// 틀린 시도는 접속한 곳(IP)마다 10분에 5번까지 (서버 메모리 기준 보조 장치)
+async function verifyMaster(formData: FormData): Promise<LoginState> {
+  try {
+    const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!allow(`master:${ip}`, 5, 10 * 60_000)) {
+      return { step: "master", error: "너무 많이 시도했어요. 10분 뒤에 다시 시도해 주세요." };
+    }
+    if (!checkMasterCode(String(formData.get("code") ?? ""))) {
+      await logEvent({ email: MASTER_USER.email, action: "로그인 실패", path: "/login" });
+      return { step: "master", error: "코드가 맞지 않아요." };
+    }
+    await clearPendingLogin();
+    await createMasterSession();
+    await logEvent({ email: MASTER_USER.email, name: MASTER_USER.name, action: "로그인", path: "/login" });
+  } catch (error) {
+    console.error("[로그인] 마스터코드 확인 실패:", error);
+    return { step: "master", error: "지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요." };
+  }
+  redirect("/notices");
+}
+
 // 코드 입력 화면에서 '이메일 다시 입력'
 async function restart(): Promise<LoginState> {
   await clearPendingLogin();
@@ -104,6 +129,10 @@ export async function loginStep(prev: LoginState, formData: FormData): Promise<L
       return requestCode(prev, formData);
     case "verify":
       return verifyCode(prev, formData);
+    case "master":
+      return { step: "master" };
+    case "verify-master":
+      return verifyMaster(formData);
     default:
       return restart();
   }

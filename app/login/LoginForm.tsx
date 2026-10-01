@@ -12,7 +12,6 @@ export function LoginForm({ initial }: { initial: LoginState }) {
   if (state.step === "email") {
     return (
       <form action={action} className="space-y-4">
-        <input type="hidden" name="intent" value="send" />
         <label className="block">
           <span className={label}>이메일</span>
           <input
@@ -27,7 +26,8 @@ export function LoginForm({ initial }: { initial: LoginState }) {
           />
         </label>
         {state.error && <p className={errorText}>{state.error}</p>}
-        <button disabled={pending} className="auth-button px-4 py-2.5 text-[15px]">
+        {/* 엔터를 누르면 첫 번째 버튼(계속하기)으로 제출됨 */}
+        <button name="intent" value="send" disabled={pending} className="auth-button px-4 py-2.5 text-[15px]">
           {pending ? (
             <Spinner />
           ) : (
@@ -35,6 +35,43 @@ export function LoginForm({ initial }: { initial: LoginState }) {
               계속하기 <span className="arrow">→</span>
             </>
           )}
+        </button>
+        <button name="intent" value="master" formNoValidate disabled={pending} className="auth-link w-full text-[13px]">
+          마스터코드로 입장
+        </button>
+      </form>
+    );
+  }
+
+  if (state.step === "master") {
+    return (
+      <form action={action} className="space-y-4">
+        <label className="block">
+          <span className={label}>마스터코드</span>
+          <input
+            name="code"
+            type="password"
+            required
+            autoFocus
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            placeholder="XXXX-XXXX"
+            className="auth-input px-3.5 py-3 text-center font-mono text-xl tracking-[0.3em] uppercase"
+          />
+        </label>
+        {state.error && <p className={errorText}>{state.error}</p>}
+        <button name="intent" value="verify-master" disabled={pending} className="auth-button px-4 py-2.5 text-[15px]">
+          {pending ? (
+            <Spinner />
+          ) : (
+            <>
+              입장하기 <span className="arrow">→</span>
+            </>
+          )}
+        </button>
+        <button name="intent" value="restart" formNoValidate disabled={pending} className="auth-link w-full text-[13px]">
+          이메일로 로그인
         </button>
       </form>
     );
