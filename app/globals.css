@@ -110,6 +110,15 @@
   --cat-6: #008300;
   --cat-7: #4a3aa7;
   --cat-8: #e34948;
+  /* 팀 고정 색 (1팀 빨강 · 2팀 주황 · 3팀 노랑 · 4팀 하늘 · 5팀 파랑 · 6팀 보라 · 7팀 분홍)
+     흰 배경에서 선이 잘 보이도록 대비 3:1 이상 (노랑은 머스터드 톤으로 어둡게) */
+  --team-1: #dc2626;
+  --team-2: #ea6c0a;
+  --team-3: #b38600;
+  --team-4: #0b94cf;
+  --team-5: #1d4ed8;
+  --team-6: #7c3aed;
+  --team-7: #d6408f;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .app-theme {
@@ -135,6 +144,13 @@
     --cat-6: #008300;
     --cat-7: #9085e9;
     --cat-8: #e66767;
+  --team-1: #f05252;
+  --team-2: #fb8c2b;
+  --team-3: #e8c22a;
+  --team-4: #4cc3f0;
+  --team-5: #5b8cf5;
+  --team-6: #a985f7;
+  --team-7: #f27bb8;
   }
 }
 :root[data-theme="dark"] .app-theme {
@@ -160,6 +176,13 @@
   --cat-6: #008300;
   --cat-7: #9085e9;
   --cat-8: #e66767;
+  --team-1: #f05252;
+  --team-2: #fb8c2b;
+  --team-3: #e8c22a;
+  --team-4: #4cc3f0;
+  --team-5: #5b8cf5;
+  --team-6: #a985f7;
+  --team-7: #f27bb8;
 }
 
 .app-theme {

@@ -72,7 +72,8 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   // 개강이 하나면 팀을 여러 개 골라 비교 (선 = 팀, 색 = 팀 번호), 개강이 여럿이면 팀은 하나만 (선 = 개강)
   const multiTeam = selected.length === 1;
   const teams: number[] = multiTeam ? requestedTeams : requestedTeams.slice(0, 1);
-  const teamColor = (t: number) => `var(--cat-${t})`;
+  // 팀 고정 색 (globals.css --team-1~7: 빨강·주황·노랑·하늘·파랑·보라·분홍)
+  const teamColor = (t: number) => `var(--team-${t})`;
   type Line = { id: string; label: string; color: string; course: Course };
   let lines: Line[];
   if (!teams.length) {
