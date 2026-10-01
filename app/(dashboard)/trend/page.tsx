@@ -5,6 +5,8 @@ import { CaptureArea } from "@/components/CaptureArea";
 import { Chip, ChipRow } from "@/components/Chip";
 import { CrossTable } from "@/components/CrossTable";
 import { PageHeader } from "@/components/PageHeader";
+import { TeamChipRow } from "@/components/TeamChips";
+import { pickTeam } from "@/lib/teams";
 import { LineChart } from "@/components/LineChart";
 import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
@@ -33,7 +35,9 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   // 지표 (?m=find|sangdam). 없으면 찾기
   const metric: WeeklyMetric = isMetric(params.m) ? params.m : "find";
   const metricLabel = WEEKLY_METRICS[metric].label;
-  const courses = await getCourses(metric);
+  // 팀 (?t=3). 없으면 지역 전체
+  const { team, teamLabel } = pickTeam(params);
+  const courses = await getCourses(metric, team);
 
   // 년도: 주소에 없으면 데이터의 가장 최근 년도 (지금은 43년)
   const years = [...new Set(courses.map((c) => c.year))].sort((a, b) => b - a);
@@ -74,14 +78,15 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
 
   // 선택이 비면 c를 빈 값으로 남겨서 "선택 없음"을 기억 (없애면 처음 방문처럼 기본값이 다시 선택됨)
   const colOf = (id: string) => selected.findIndex((c) => c.id === id);
-  const hrefWith = (ids: string[], m: string = metric) => ({
-    query: { m, year, c: ids.length ? ids : "" },
+  const hrefWith = (ids: string[], m: string = metric, t: number | undefined = team) => ({
+    query: { m, year, c: ids.length ? ids : "", ...(t && { t }) },
   });
   const toggle = (id: string) =>
     selectedIds.has(id)
       ? [...selectedIds].filter((x) => x !== id)
       : [...selectedIds, id];
-  const caption = `새빛지역 · ${year}년 · 개강별 동주차 누적 ${metricLabel} 인원 · ${selected.map((c) => c.label).join(", ")}`;
+  const teamSuffix = team ? ` · ${teamLabel}` : "";
+  const caption = `새빛지역${teamSuffix} · ${year}년 · 개강별 동주차 누적 ${metricLabel} 인원 · ${selected.map((c) => c.label).join(", ")}`;
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
@@ -165,15 +170,17 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
             모두 해제
           </PendingLink>
         </div>
+        <TeamChipRow team={team} href={(t) => hrefWith([...selectedIds], metric, t)} />
       </section>
 
       <CaptureArea
         className="card space-y-5 p-5"
-        fileName={`동주차_누적${metricLabel}_${year}년`}
+        fileName={`동주차_누적${metricLabel}_${year}년${team ? `_${teamLabel}` : ""}`}
         caption={caption}
       >
         <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
-          동주차 누적 {metricLabel} 인원{" "}
+          동주차 누적 {metricLabel} 인원
+          {teamSuffix}{" "}
           <span className="text-xs font-normal text-muted">
             {year}년 · 첫 주차부터 그 주차까지 합산
           </span>

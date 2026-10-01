@@ -7,7 +7,11 @@ export function zoneOf(v: unknown): string | null {
     const d = new Date(Date.UTC(1899, 11, 30) + v * 86_400_000);
     return `${d.getUTCMonth() + 1}-${d.getUTCDate()}`;
   }
-  const m = String(v ?? "").trim().match(/^(\d+)\s*-\s*(\d+)/);
+  const s = String(v ?? "").trim();
+  // 화면에 보이는 글자로 읽은 경우 날짜로 바뀐 칸은 "2026. 5. 3" 모양
+  const date = s.match(/^\d{4}\.\s*(\d+)\.\s*(\d+)\.?$/);
+  if (date) return `${Number(date[1])}-${Number(date[2])}`;
+  const m = s.match(/^(\d+)\s*-\s*(\d+)/);
   return m ? `${Number(m[1])}-${Number(m[2])}` : null;
 }
 

@@ -1,14 +1,16 @@
 import "server-only";
 import { readValues } from "./google";
+import { teamOf } from "./teams";
 
 // '새빛 찾기 체계' 스프레드시트에서 지표별 주차 열을 읽어 개강별·주차별 개수로 집계
 // 값 예: "43년 9월 8주차", "42년 12.29월 10주차". 형식이 다르거나 빈 칸인 행은 세지 않음
 // courseRange가 있으면 개강은 그 열("43년 9월"), 주차는 range 열("9월 8주차")에서 따로 읽음
 // weight: 한 줄을 몇 명으로 셀지 (육따기는 인도·교육 등 역할마다 한 줄씩이라 0.5명)
-export const WEEKLY_METRICS: Record<string, { label: string; range: string; courseRange?: string; weight?: number }> = {
-  find: { label: "찾기", range: "'누적추이 계산용 시트(수정금지)'!B2:B" }, // B열 찾기 주차
-  sangdam: { label: "상담", range: "'비상'!A2:A" }, // A열 주차
-  yuk: { label: "육따기", range: "'육따기'!B2:B", courseRange: "'육따기'!A2:A", weight: 0.5 }, // A열 개강월, B열 "N월 N주차"
+// teamRange: 팀-구역 열 ("3-2" → 3팀). 팀을 고르면 그 팀 행만 셈
+export const WEEKLY_METRICS: Record<string, { label: string; range: string; teamRange: string; courseRange?: string; weight?: number }> = {
+  find: { label: "찾기", range: "'누적추이 계산용 시트(수정금지)'!B2:B", teamRange: "'누적추이 계산용 시트(수정금지)'!C2:C" }, // B열 찾기 주차, C열 팀-구역
+  sangdam: { label: "상담", range: "'비상'!A2:A", teamRange: "'비상'!C2:C" }, // A열 주차, C열 팀-구
+  yuk: { label: "육따기", range: "'육따기'!B2:B", teamRange: "'육따기'!C2:C", courseRange: "'육따기'!A2:A", weight: 0.5 }, // A열 개강월, B열 "N월 N주차", C열 팀-구역
 };
 export type WeeklyMetric = "find" | "sangdam" | "yuk";
 
@@ -34,11 +36,14 @@ export function describeCourse(month: string) {
   return { label: `${Number.isInteger(m) ? m : month}월 개강`, order: Number.isFinite(m) ? m : 99 };
 }
 
-export async function getCourses(metric: WeeklyMetric): Promise<Course[]> {
+// team: 1~7이면 그 팀 행만 셈. 개강·주차 목록은 팀과 상관없이 지역 전체 기준으로 만들어서
+// 팀을 바꿔도 같은 주차 축을 쓰고, 그 팀이 한 명도 없는 주차는 0으로 나옴
+export async function getCourses(metric: WeeklyMetric, team?: number): Promise<Course[]> {
   const config = WEEKLY_METRICS[metric];
-  const [rows, courseRows] = await Promise.all([
+  const [rows, courseRows, teamRows] = await Promise.all([
     readValues(process.env.GOOGLE_SHEET_ID!, config.range),
     config.courseRange ? readValues(process.env.GOOGLE_SHEET_ID!, config.courseRange) : Promise.resolve([] as string[][]),
+    team ? readValues(process.env.GOOGLE_SHEET_ID!, config.teamRange) : Promise.resolve([] as string[][]),
   ]);
   const weight = config.weight ?? 1;
   const courses = new Map<string, Course>();
@@ -63,7 +68,8 @@ export async function getCourses(metric: WeeklyMetric): Promise<Course[]> {
       course = { id, year: Number(year), label, order: Number(year) * 100 + order, weeks: new Map() };
       courses.set(id, course);
     }
-    course.weeks.set(Number(week), (course.weeks.get(Number(week)) ?? 0) + weight);
+    const counted = !team || teamOf(teamRows[i]?.[0]) === team;
+    course.weeks.set(Number(week), (course.weeks.get(Number(week)) ?? 0) + (counted ? weight : 0));
   }
   return [...courses.values()].sort((a, b) => a.order - b.order);
 }
