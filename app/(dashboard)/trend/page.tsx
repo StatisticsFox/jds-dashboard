@@ -78,7 +78,8 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
 
   // 선택이 비면 c를 빈 값으로 남겨서 "선택 없음"을 기억 (없애면 처음 방문처럼 기본값이 다시 선택됨)
   const colOf = (id: string) => selected.findIndex((c) => c.id === id);
-  const hrefWith = (ids: string[], m: string = metric, t: number | undefined = team) => ({
+  // t: 팀을 바꿀 때만 넘김 (null = 전체). 넘기지 않으면 지금 팀 유지
+  const hrefWith = (ids: string[], m: string = metric, t: number | null | undefined = team) => ({
     query: { m, year, c: ids.length ? ids : "", ...(t && { t }) },
   });
   const toggle = (id: string) =>
@@ -170,7 +171,7 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
             모두 해제
           </PendingLink>
         </div>
-        <TeamChipRow team={team} href={(t) => hrefWith([...selectedIds], metric, t)} />
+        <TeamChipRow team={team} href={(t) => hrefWith([...selectedIds], metric, t ?? null)} />
       </section>
 
       <CaptureArea
