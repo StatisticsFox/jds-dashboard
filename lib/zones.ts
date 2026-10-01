@@ -9,6 +9,7 @@ import { describeCourse, FIRST_YEAR, WEEK_PATTERN } from "./weekly";
 //   상예 — '열매누적' B 입력 날짜 · C 인도 지역(새빛) · D 인도 팀-구역 (단계가 '찾기'인 행은 제외)
 //          주차 칸이 없어서 입력 날짜를 찾기·상담 기록의 날짜↔주차 달력으로 주차에 맞춤 (열매 추이 상예와 같은 방식)
 // 월 = 주차 이름의 "N월" (예: 43년 9월 8주차 → 43년 9월)
+// 순위에 보여줄 구역 = '새빛 목표달성현황표' W열에 있는 지금 구역 (없어진 구역은 빼고, 그 구역 기록도 세지 않음)
 
 export type ZoneRecord = { month: string; week: number; zone: string; real?: boolean };
 export type ZoneMonth = { id: string; label: string; order: number; weeks: number[] };
@@ -22,9 +23,10 @@ const validZone = (v: Cell) => {
 
 export async function getZoneData() {
   const sheet = process.env.GOOGLE_SHEET_ID!;
-  const [[tWeek, tZone, tJeongpa], [fStage, fDate, fRegion, fZone], weekOn] = await Promise.all([
+  const [[tWeek, tZone, tJeongpa], [fStage, fDate, fRegion, fZone], [current], weekOn] = await Promise.all([
     readColumns(sheet, ["'누적추이 계산용 시트(수정금지)'!B2:B", "'누적추이 계산용 시트(수정금지)'!C2:C", "'누적추이 계산용 시트(수정금지)'!M2:M"]),
     readColumns(sheet, ["'열매누적'!A4:A", "'열매누적'!B4:B", "'열매누적'!C4:C", "'열매누적'!D4:D"]),
+    readColumns(sheet, ["'새빛 목표달성현황표'!W1:W200"]),
     getWeekCalendar(),
   ]);
   const col = (c: Cell[][]) => c[0] ?? [];
@@ -64,10 +66,12 @@ export async function getZoneData() {
     const [bt, bz] = b.split("-").map(Number);
     return at - bt || az - bz;
   };
+  // 지금 구역 목록 ("1-1" 모양인 칸만). 읽지 못하면 기록에 나온 구역 전부
+  const currentZones = (current[0] ?? []).map((v) => (/^\s*\d+\s*-\s*\d+\s*$/.test(String(v ?? "")) ? validZone(v) : null)).filter((z): z is string => z !== null);
   return {
     tachat,
     sangye,
-    zones: [...zones].sort(byZoneId),
+    zones: [...new Set(currentZones.length ? currentZones : zones)].sort(byZoneId),
     // 월은 오래된 순, 주차는 큰 수부터 (10주차 → 6주차, 개강에 가까워지는 순서)
     months: [...months.values()]
       .sort((a, b) => a.order - b.order)
