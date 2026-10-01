@@ -37,7 +37,7 @@ export default async function RegionConversionPage() {
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
       <PageHeader
-        title="지역 유월율"
+        title="지역 유월율 · 월별 추이"
         description="개강마다 새빛지역 전체의 유월율이 어떻게 바뀌는지 봐요 · 계산 방식은 팀별 유월율 탭과 같아요"
         right={<RefreshBar at={dataFetchedAt()} />}
       />

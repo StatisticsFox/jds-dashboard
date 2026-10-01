@@ -14,7 +14,8 @@ const GROUPS: Group[] = [
     title: "현황",
     items: [
       { href: "/", label: "팀별 유월율" },
-      { href: "/region-conversion", label: "지역 유월율" },
+      { href: "/region-conversion", label: "지역 유월율 · 월별 추이" },
+      { href: "/region-conversion/course", label: "지역 유월율 · 개강별 세부" },
       { href: "/goals", label: "목표 달성" },
       { href: "/zones", label: "타찾·상예 구역 순위" },
     ],
