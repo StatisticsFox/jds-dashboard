@@ -62,9 +62,9 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
         { label: "타찾 (실질)", value: f.tachat, color: "var(--stage-tachat)" },
         { label: "상예", value: f.sangye, color: "var(--stage-sangye)" },
         { label: "상담", value: f.sangdam, color: "var(--stage-sangdam)" },
-        { label: "따기", value: f.yuk, color: "var(--stage-yuk)" },
-        { label: "OT", value: f.ot, color: "var(--stage-ot)" },
-        { label: "센터등록", value: f.center, color: "var(--stage-center)" },
+        { label: "따기", value: f.yuk, color: "var(--stage-yuk)", unit: "" },
+        { label: "OT", value: f.ot, color: "var(--stage-ot)", unit: "" },
+        { label: "센터등록", value: f.center, color: "var(--stage-center)", unit: "" },
       ]
     : [];
 

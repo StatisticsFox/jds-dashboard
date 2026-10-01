@@ -1,6 +1,7 @@
 import { formatCount } from "@/lib/format";
 
-export type FunnelStep = { label: string; value: number | null; color: string };
+// unit: 숫자 뒤 단위 (기본 "명"). 0.5 단위로 세는 단계(따기 등)는 "" 로 숫자만
+export type FunnelStep = { label: string; value: number | null; color: string; unit?: string };
 
 // 막대 칸 : 사이 칸 너비 비율 (사이 칸에는 다음 단계로 넘어간 비율을 작게)
 const GAP = 0.45;
@@ -38,7 +39,7 @@ export function FunnelBars({ steps, height = 240 }: { steps: FunnelStep[]; heigh
                   → {rate(steps[i - 1].value, s.value)}
                 </span>
               )}
-              <span className="text-center text-sm font-semibold tabular-nums">{s.value === null ? "–" : `${formatCount(s.value)}명`}</span>
+              <span className="text-center text-sm font-semibold tabular-nums">{s.value === null ? "–" : `${formatCount(s.value)}${s.unit ?? "명"}`}</span>
             </div>
           ))}
         </div>
