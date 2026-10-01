@@ -1,6 +1,7 @@
 import "server-only";
-import { readValues } from "./google";
+import { readColumns, readValues } from "./google";
 import { teamOf } from "./teams";
+import { getWeekCalendar } from "./week-calendar";
 
 // '새빛 찾기 체계' 스프레드시트에서 지표별 주차 열을 읽어 개강별·주차별 개수로 집계
 // 값 예: "43년 9월 8주차", "42년 12.29월 10주차". 형식이 다르거나 빈 칸인 행은 세지 않음
@@ -12,7 +13,9 @@ export const WEEKLY_METRICS: Record<string, { label: string; range: string; team
   sangdam: { label: "상담", range: "'비상'!A2:A", teamRange: "'비상'!C2:C" }, // A열 주차, C열 팀-구
   yuk: { label: "육따기", range: "'육따기'!B2:B", teamRange: "'육따기'!C2:C", courseRange: "'육따기'!A2:A", weight: 0.5 }, // A열 개강월, B열 "N월 N주차", C열 팀-구역
 };
-export type WeeklyMetric = "find" | "sangdam" | "yuk";
+// 상예는 주차 칸이 없어 별도로 셈 (getSangyeCourses)
+export const SANGYE_LABEL = "상예";
+export type WeeklyMetric = "find" | "sangye" | "sangdam" | "yuk";
 
 // 이 년도부터만 보여줌 (그 이전 데이터는 형식이 달라 제외)
 export const FIRST_YEAR = 43;
@@ -39,6 +42,7 @@ export function describeCourse(month: string) {
 // team: 1~7이면 그 팀 행만 셈. 개강·주차 목록은 팀과 상관없이 지역 전체 기준으로 만들어서
 // 팀을 바꿔도 같은 주차 축을 쓰고, 그 팀이 한 명도 없는 주차는 0으로 나옴
 export async function getCourses(metric: WeeklyMetric, team?: number): Promise<Course[]> {
+  if (metric === "sangye") return getSangyeCourses(team);
   const config = WEEKLY_METRICS[metric];
   const [rows, courseRows, teamRows] = await Promise.all([
     readValues(process.env.GOOGLE_SHEET_ID!, config.range),
@@ -71,6 +75,33 @@ export async function getCourses(metric: WeeklyMetric, team?: number): Promise<C
     const counted = !team || teamOf(teamRows[i]?.[0]) === team;
     course.weeks.set(Number(week), (course.weeks.get(Number(week)) ?? 0) + (counted ? weight : 0));
   }
+  return [...courses.values()].sort((a, b) => a.order - b.order);
+}
+
+// 상예: '열매누적'에서 인도 지역이 새빛인 행(단계가 '찾기'인 행 제외, 탈락 포함 = 상예 컨펌된 모든 열매)
+// B 입력 날짜를 날짜↔주차 달력으로 주차에 맞추고, 팀은 D 인도 팀-구역
+async function getSangyeCourses(team?: number): Promise<Course[]> {
+  const [weekOn, [stage, date, region, zone]] = await Promise.all([
+    getWeekCalendar(),
+    readColumns(process.env.GOOGLE_SHEET_ID!, ["'열매누적'!A4:A", "'열매누적'!B4:B", "'열매누적'!C4:C", "'열매누적'!D4:D"]),
+  ]);
+  const courses = new Map<string, Course>();
+  (region[0] ?? []).forEach((r, i) => {
+    const d = date[0]?.[i];
+    if (String(r ?? "").trim() !== "새빛" || typeof d !== "number" || String(stage[0]?.[i] ?? "").trim().startsWith("찾기")) return;
+    const m = weekOn(d)?.match(WEEK_PATTERN);
+    if (!m || Number(m[1]) < FIRST_YEAR) return;
+    const [, year, month, week] = m;
+    const id = `${year}-${month}`;
+    let course = courses.get(id);
+    if (!course) {
+      const { label, order } = describeCourse(month);
+      course = { id, year: Number(year), label, order: Number(year) * 100 + order, weeks: new Map() };
+      courses.set(id, course);
+    }
+    const counted = !team || teamOf(zone[0]?.[i]) === team;
+    course.weeks.set(Number(week), (course.weeks.get(Number(week)) ?? 0) + (counted ? 1 : 0));
+  });
   return [...courses.values()].sort((a, b) => a.order - b.order);
 }
 

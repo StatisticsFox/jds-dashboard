@@ -12,6 +12,7 @@ import { preferredCourse } from "@/lib/course-pref";
 import { requireUser } from "@/lib/dal";
 import {
   getCourses,
+  SANGYE_LABEL,
   WEEKLY_METRICS,
   weeklyTable,
   type WeeklyMetric,
@@ -23,18 +24,19 @@ const DEFAULT_COUNT = 4;
 // 지표 탭 순서
 const METRICS: { key: WeeklyMetric; label: string }[] = [
   { key: "find", label: "찾기" },
+  { key: "sangye", label: "상예" },
   { key: "sangdam", label: "상담" },
   { key: "yuk", label: "육따기" },
 ];
 const isMetric = (v: unknown): v is WeeklyMetric =>
-  typeof v === "string" && v in WEEKLY_METRICS;
+  METRICS.some((m) => m.key === v);
 
 export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
   await requireUser();
   const params = await searchParams;
   // 지표 (?m=find|sangdam). 없으면 찾기
   const metric: WeeklyMetric = isMetric(params.m) ? params.m : "find";
-  const metricLabel = WEEKLY_METRICS[metric].label;
+  const metricLabel = metric === "sangye" ? SANGYE_LABEL : WEEKLY_METRICS[metric].label;
   // 팀 (?t=3). 없으면 지역 전체
   const { team, teamLabel } = pickTeam(params);
   const courses = await getCourses(metric, team);
@@ -277,6 +279,8 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
               인원이에요. – 는 그 개강에 해당 주차 데이터가 없다는 뜻이고,{" "}
               {metric === "find"
                 ? "찾기 주차(B열)가 빈 행은 세지 않아요."
+                : metric === "sangye"
+                  ? "상예는 열매누적에 주차 칸이 없어서, 입력 날짜(B열)를 그 날짜의 찾기·상담 기록에 적힌 주차로 맞춰 세요. 인도 지역이 새빛인 열매만, 탈락한 열매도 포함해요."
                 : metric === "sangdam"
                   ? "비상 탭 주차(A열)가 43년 형식인 행만 세요."
                   : "육따기 탭 개강월(A열)이 43년인 행만, 주차는 B열로 세요. 인도·교육 등 역할마다 한 줄씩이라 한 줄 = 0.5명이에요."}
