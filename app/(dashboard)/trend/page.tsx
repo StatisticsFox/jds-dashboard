@@ -169,6 +169,8 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
           {yearCourses.map((c) => {
             const on = selectedIds.has(c.id);
             const full = !on && selectedIds.size >= MAX_SELECTED;
+            // 팀을 여러 개 고른 상태에서는 개강을 더 고를 수 없음 (개강 여럿 + 팀 여럿은 비교 방식이 없어서 막음)
+            const locked = !on && teams.length >= 2;
             return (
               <Chip
                 key={c.id}
@@ -180,9 +182,13 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
                     ? color(selected.findIndex((s) => s.id === c.id))
                     : undefined
                 }
-                disabled={full}
+                disabled={full || locked}
                 title={
-                  full ? `최대 ${MAX_SELECTED}개까지 고를 수 있어요` : undefined
+                  locked
+                    ? "팀을 여러 개 고르면 개강은 하나만 볼 수 있어요"
+                    : full
+                      ? `최대 ${MAX_SELECTED}개까지 고를 수 있어요`
+                      : undefined
                 }
               >
                 {c.label.replace(" 개강", "")}
@@ -191,19 +197,25 @@ export default async function TrendPage({ searchParams }: PageProps<"/trend">) {
           })}
         </ChipRow>
         <div className="flex flex-wrap gap-3 pl-0.5 text-xs text-muted sm:pl-[4.75rem]">
-          <span>여러 개 고를 수 있어요 (최대 {MAX_SELECTED}개)</span>
-          <PendingLink
-            href={hrefWith(yearCourses.slice(-DEFAULT_COUNT).map((c) => c.id))}
-            className="hover:text-foreground hover:underline"
-          >
-            최근 {DEFAULT_COUNT}개
-          </PendingLink>
-          <PendingLink
-            href={hrefWith(yearCourses.slice(-MAX_SELECTED).map((c) => c.id))}
-            className="hover:text-foreground hover:underline"
-          >
-            최근 {MAX_SELECTED}개
-          </PendingLink>
+          {teams.length >= 2 ? (
+            <span>팀을 여러 개 고른 동안에는 개강을 하나만 볼 수 있어요 (팀을 하나로 줄이면 다시 여러 개 고를 수 있어요)</span>
+          ) : (
+            <>
+              <span>여러 개 고를 수 있어요 (최대 {MAX_SELECTED}개)</span>
+              <PendingLink
+                href={hrefWith(yearCourses.slice(-DEFAULT_COUNT).map((c) => c.id))}
+                className="hover:text-foreground hover:underline"
+              >
+                최근 {DEFAULT_COUNT}개
+              </PendingLink>
+              <PendingLink
+                href={hrefWith(yearCourses.slice(-MAX_SELECTED).map((c) => c.id))}
+                className="hover:text-foreground hover:underline"
+              >
+                최근 {MAX_SELECTED}개
+              </PendingLink>
+            </>
+          )}
           <PendingLink
             href={hrefWith([])}
             className="hover:text-foreground hover:underline"
