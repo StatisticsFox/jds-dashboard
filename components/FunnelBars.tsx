@@ -35,7 +35,7 @@ export function FunnelBars({ steps, height = 240 }: { steps: FunnelStep[]; heigh
           {steps.map((s, i) => (
             <div key={s.label} className="contents">
               {i > 0 && (
-                <span className="justify-self-center rounded bg-accent-soft px-1 py-px text-[11px] font-semibold text-accent-strong tabular-nums">
+                <span className="justify-self-center whitespace-nowrap rounded bg-accent-soft px-1 py-px text-[10px] font-semibold text-accent-strong tabular-nums">
                   → {rate(steps[i - 1].value, s.value)}
                 </span>
               )}

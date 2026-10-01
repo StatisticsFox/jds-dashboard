@@ -119,11 +119,12 @@
   --team-5: #1d4ed8;
   --team-6: #7c3aed;
   --team-7: #d6408f;
-  /* 단계 색 (개강별 세부 막대): 타찾 밝은 초록 · 상예 보라 · 상담 하늘 · 육따기 주황 · OT 분홍 · 센터등록 남색 */
+  /* 단계 색 (개강별 세부 막대): 타찾 밝은 초록 · 상예 보라 · 상담 하늘 · 육따기 주황 · 전→복 이관 청록 · OT 분홍 · 센터등록 남색 */
   --stage-tachat: #22b85a;
   --stage-sangye: #8b5cf6;
   --stage-sangdam: #0ea5e9;
   --stage-yuk: #f97316;
+  --stage-transfer: #0d9488;
   --stage-ot: #ec4899;
   --stage-center: #1e3a8a;
 }
@@ -162,6 +163,7 @@
   --stage-sangye: #a78bfa;
   --stage-sangdam: #38bdf8;
   --stage-yuk: #fb923c;
+  --stage-transfer: #2dd4bf;
   --stage-ot: #f472b6;
   --stage-center: #6b8cff;
   }
@@ -200,6 +202,7 @@
   --stage-sangye: #a78bfa;
   --stage-sangdam: #38bdf8;
   --stage-yuk: #fb923c;
+  --stage-transfer: #2dd4bf;
   --stage-ot: #f472b6;
   --stage-center: #6b8cff;
 }

@@ -11,18 +11,18 @@ import { getOtStats, type OtStats } from "@/lib/ot-stats";
 import { getRegionConversion, type CourseConversion } from "@/lib/region-conversion";
 
 // 개강 하나의 단계별 인원 (지역 전체)
-// 타찾·상예·상담: 유월율 파일 (팀별 유월율 탭과 같은 계산, 타찾은 실질)
-// 따기·OT·센터등록: '43년 센터등록 명단 및 유월율' 파일 (따기 = 육따기 최대 수치). 그 파일에 아직 없는 개강의 따기는 유월율 파일의 육따기 누적
-type Funnel = { tachat: number; sangye: number; sangdam: number; yuk: number; yukFromSheet: boolean; ot: number | null; center: number | null };
+// 타찾·상예·상담·따기: 유월율 파일 (팀별 유월율 탭과 같은 계산, 타찾은 실질, 따기 = 육따기 누적)
+// 전→복 이관·OT·센터등록: '43년 센터등록 명단 및 유월율' 파일 (이관 = 육따기 최대 수치)
+//   육따기 열매는 전도 파트에서 복음방 파트로 넘어가는데, 넘어간 뒤 복음방 파트에서 올리지 않는 열매가 있어 따기보다 줄어듦
+type Funnel = { tachat: number; sangye: number; sangdam: number; yuk: number; transfer: number | null; ot: number | null; center: number | null };
 
 function funnelOf(c: CourseConversion, ot: OtStats | undefined): Funnel {
-  const yukFromSheet = ot?.yukMax != null;
   return {
     tachat: c.counts.tachatReal,
     sangye: c.counts.sangye,
     sangdam: c.counts.sangdam,
-    yuk: yukFromSheet ? ot!.yukMax! : c.counts.yukCum,
-    yukFromSheet,
+    yuk: c.counts.yukCum,
+    transfer: ot?.yukMax ?? null,
     ot: ot?.ot ?? null,
     center: ot?.center ?? null,
   };
@@ -32,7 +32,8 @@ const RATES: { key: string; label: string; from: keyof Funnel; to: keyof Funnel;
   { key: "tachatSangye", label: "타찾 → 상예", from: "tachat", to: "sangye", fromLabel: "타찾", toLabel: "상예" },
   { key: "sangyeSangdam", label: "상예 → 상담", from: "sangye", to: "sangdam", fromLabel: "상예", toLabel: "상담" },
   { key: "sangdamYuk", label: "상담 → 따기", from: "sangdam", to: "yuk", fromLabel: "상담", toLabel: "따기" },
-  { key: "yukOt", label: "육따기 → OT", from: "yuk", to: "ot", fromLabel: "따기", toLabel: "OT" },
+  { key: "yukTransfer", label: "따기 → 전→복 이관", from: "yuk", to: "transfer", fromLabel: "따기", toLabel: "이관" },
+  { key: "transferOt", label: "이관 → OT", from: "transfer", to: "ot", fromLabel: "이관", toLabel: "OT" },
   { key: "otCenter", label: "OT → 센터등록", from: "ot", to: "center", fromLabel: "OT", toLabel: "센터등록" },
 ];
 const rateOf = (f: Funnel, from: keyof Funnel, to: keyof Funnel) => {
@@ -71,6 +72,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
         { label: "상예", value: f.sangye, color: "var(--stage-sangye)" },
         { label: "상담", value: f.sangdam, color: "var(--stage-sangdam)" },
         { label: "따기", value: f.yuk, color: "var(--stage-yuk)", unit: "" },
+        { label: "전→복 이관", value: f.transfer, color: "var(--stage-transfer)", unit: "" },
         { label: "OT", value: f.ot, color: "var(--stage-ot)", unit: "" },
         { label: "센터등록", value: f.center, color: "var(--stage-center)", unit: "" },
       ]
@@ -102,7 +104,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
             <h2 className="flex flex-wrap items-baseline gap-x-2 pr-36 text-base sm:pr-40">
               {course.label} 단계별 유월율 <span className="text-xs font-normal text-muted">아래 작은 글씨는 {prev ? `바로 전 ${prev.label}` : "(43년 첫 개강이라 전 개강 없음)"}과 43년 평균(진행 중 개강 제외)에 비교한 값</span>
             </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
               {RATES.map((r) => {
                 const v = rateOf(f, r.from, r.to);
                 const before = prevFunnel ? rateOf(prevFunnel, r.from, r.to) : null;
@@ -127,7 +129,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
                     )}
                     {avgDiff !== null && (
                       <div className={`mt-0.5 text-xs font-medium tabular-nums ${avgDiff >= 0 ? "text-good" : "text-bad"}`}>
-                        43년 평균 {formatRate(avg)} 대비 {formatRateDiff(avgDiff)}
+                        평균 {formatRate(avg)} 대비 {formatRateDiff(avgDiff)}
                       </div>
                     )}
                   </div>
@@ -143,9 +145,9 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
             </h2>
             <FunnelBars steps={steps} />
             <p className="text-xs text-muted">
-              타찾(실질)·상예·상담은 팀별 유월율 탭과 같은 계산이에요 (기간 {course.settings.tachatStart.slice(5).replace("-", ".")}~{course.settings.tachatEnd.slice(5).replace("-", ".")}
-              {course.official ? "" : ", 추정 기간"}). 따기·OT·센터등록은 &lsquo;43년 센터등록 명단 및 유월율&rsquo; 시트의 육따기 최대 수치·OT·센터등록이에요
-              {!f.yukFromSheet && " (이 개강은 그 시트에 아직 없어서 따기는 유월율 파일의 육따기 누적으로 보여줘요)"}. 아직 집계 전인 단계는 점선 막대로 표시해요.
+              타찾(실질)·상예·상담·따기는 팀별 유월율 탭과 같은 계산이에요 (기간 {course.settings.tachatStart.slice(5).replace("-", ".")}~{course.settings.tachatEnd.slice(5).replace("-", ".")}
+              {course.official ? "" : ", 추정 기간"}, 따기 = 육따기 누적). 전→복 이관·OT·센터등록은 &lsquo;43년 센터등록 명단 및 유월율&rsquo; 시트의 육따기 최대 수치·OT·센터등록이에요.
+              육따기 열매는 전도 파트에서 복음방 파트로 이관되는데, 이관 뒤 복음방 파트에서 따로 올리지 않는 열매가 있어 따기보다 줄어들어요. 아직 집계 전인 단계는 점선 막대로 표시해요.
             </p>
           </CaptureArea>
         </>
