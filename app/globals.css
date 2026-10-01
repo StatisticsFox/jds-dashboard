@@ -119,6 +119,13 @@
   --team-5: #1d4ed8;
   --team-6: #7c3aed;
   --team-7: #d6408f;
+  /* 단계 색 (개강별 세부 막대): 타찾 밝은 초록 · 상예 보라 · 상담 하늘 · 육따기 주황 · OT 분홍 · 센터등록 남색 */
+  --stage-tachat: #22b85a;
+  --stage-sangye: #8b5cf6;
+  --stage-sangdam: #0ea5e9;
+  --stage-yuk: #f97316;
+  --stage-ot: #ec4899;
+  --stage-center: #1e3a8a;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .app-theme {
@@ -151,6 +158,12 @@
   --team-5: #5b8cf5;
   --team-6: #a985f7;
   --team-7: #f27bb8;
+  --stage-tachat: #4ade80;
+  --stage-sangye: #a78bfa;
+  --stage-sangdam: #38bdf8;
+  --stage-yuk: #fb923c;
+  --stage-ot: #f472b6;
+  --stage-center: #6b8cff;
   }
 }
 :root[data-theme="dark"] .app-theme {
@@ -183,6 +196,12 @@
   --team-5: #5b8cf5;
   --team-6: #a985f7;
   --team-7: #f27bb8;
+  --stage-tachat: #4ade80;
+  --stage-sangye: #a78bfa;
+  --stage-sangdam: #38bdf8;
+  --stage-yuk: #fb923c;
+  --stage-ot: #f472b6;
+  --stage-center: #6b8cff;
 }
 
 .app-theme {

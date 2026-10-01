@@ -59,12 +59,12 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
 
   const steps = f
     ? [
-        { label: "타찾 (실질)", value: f.tachat, color: "var(--cat-1)" },
-        { label: "상예", value: f.sangye, color: "var(--cat-2)" },
-        { label: "상담", value: f.sangdam, color: "var(--cat-3)" },
-        { label: "따기", value: f.yuk, color: "var(--cat-4)" },
-        { label: "OT", value: f.ot, color: "var(--cat-5)" },
-        { label: "센터등록", value: f.center, color: "var(--cat-7)" },
+        { label: "타찾 (실질)", value: f.tachat, color: "var(--stage-tachat)" },
+        { label: "상예", value: f.sangye, color: "var(--stage-sangye)" },
+        { label: "상담", value: f.sangdam, color: "var(--stage-sangdam)" },
+        { label: "따기", value: f.yuk, color: "var(--stage-yuk)" },
+        { label: "OT", value: f.ot, color: "var(--stage-ot)" },
+        { label: "센터등록", value: f.center, color: "var(--stage-center)" },
       ]
     : [];
 
@@ -124,7 +124,7 @@ export default async function RegionCourseDetailPage({ searchParams }: PageProps
           {/* 단계별 인원 막대 */}
           <CaptureArea className="card space-y-4 p-5" fileName={`지역유월율_${course.label}_단계별인원`.replace(/\s/g, "")} caption={`새빛지역 · 43년 ${course.label} · 단계별 인원`}>
             <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pr-36 text-base sm:pr-40">
-              {course.label} 단계별 인원 <span className="text-xs font-normal text-muted">막대 사이 숫자는 앞 단계에서 다음 단계로 넘어간 비율</span>
+              {course.label} 단계별 인원 <span className="text-xs font-normal text-muted">막대 위 점을 이은 선은 단계마다 줄어드는 모양 · 숫자 사이 → %는 다음 단계로 넘어간 비율</span>
             </h2>
             <FunnelBars steps={steps} />
             <p className="text-xs text-muted">
