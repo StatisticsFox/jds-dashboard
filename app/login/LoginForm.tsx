@@ -16,7 +16,8 @@ export function LoginForm({ initial }: { initial: LoginState }) {
           <span className={label}>이메일</span>
           <input
             name="email"
-            type="email"
+            type="text"
+            inputMode="email"
             required
             autoFocus
             autoComplete="email"
@@ -35,43 +36,6 @@ export function LoginForm({ initial }: { initial: LoginState }) {
               계속하기 <span className="arrow">→</span>
             </>
           )}
-        </button>
-        <button name="intent" value="master" formNoValidate disabled={pending} className="auth-link w-full text-[13px]">
-          마스터코드로 입장
-        </button>
-      </form>
-    );
-  }
-
-  if (state.step === "master") {
-    return (
-      <form action={action} className="space-y-4">
-        <label className="block">
-          <span className={label}>마스터코드</span>
-          <input
-            name="code"
-            type="password"
-            required
-            autoFocus
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            placeholder="XXXX-XXXX"
-            className="auth-input px-3.5 py-3 text-center font-mono text-xl tracking-[0.3em] uppercase"
-          />
-        </label>
-        {state.error && <p className={errorText}>{state.error}</p>}
-        <button name="intent" value="verify-master" disabled={pending} className="auth-button px-4 py-2.5 text-[15px]">
-          {pending ? (
-            <Spinner />
-          ) : (
-            <>
-              입장하기 <span className="arrow">→</span>
-            </>
-          )}
-        </button>
-        <button name="intent" value="restart" formNoValidate disabled={pending} className="auth-link w-full text-[13px]">
-          이메일로 로그인
         </button>
       </form>
     );

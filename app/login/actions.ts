@@ -19,7 +19,7 @@ import {
   startPendingLogin,
 } from "@/lib/session";
 
-export type LoginState = { step: "email" | "code" | "master"; email?: string; message?: string; error?: string };
+export type LoginState = { step: "email" | "code"; email?: string; message?: string; error?: string };
 
 // 1단계: 이메일 입력 → 허용된 사람이면 코드 발송
 // 허용 여부와 관계없이 같은 안내를 보여줘서, 명단에 누가 있는지 알아낼 수 없게 함
@@ -27,6 +27,8 @@ async function requestCode(prev: LoginState, formData: FormData): Promise<LoginS
   try {
     return await sendCodeStep(formData);
   } catch (error) {
+    // 마스터코드로 로그인 성공 후 이동(redirect)은 오류가 아니므로 그대로 넘김
+    unstable_rethrow(error);
     // 설정 문제(환경변수·시트 권한 등)로 실패해도 흰 오류 화면 대신 안내를 보여줌. 원인은 서버 로그에
     console.error("[로그인] 코드 요청 처리 실패:", error);
     return { step: "email", email: prev.email, error: "지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요." };
@@ -34,8 +36,12 @@ async function requestCode(prev: LoginState, formData: FormData): Promise<LoginS
 }
 
 async function sendCodeStep(formData: FormData): Promise<LoginState> {
-  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const raw = String(formData.get("email") ?? "");
+  const email = normalizeEmail(raw);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // 이메일 칸에 마스터코드를 넣으면 바로 입장. 화면에는 따로 버튼·안내가 없고,
+    // 틀리면 보통의 잘못된 이메일과 똑같은 안내만 보여줘서 마스터코드가 있다는 걸 알 수 없게 함
+    if (await tryMasterCode(raw)) redirect("/notices");
     return { step: "email", email, error: "이메일 주소를 확인해 주세요." };
   }
 
@@ -94,26 +100,20 @@ async function verifyCodeStep(formData: FormData): Promise<LoginState> {
   redirect("/notices");
 }
 
-// 마스터코드 확인 → 맞으면 이메일 없이 로그인
-// 틀린 시도는 접속한 곳(IP)마다 10분에 5번까지 (서버 메모리 기준 보조 장치)
-async function verifyMaster(formData: FormData): Promise<LoginState> {
-  try {
-    const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (!allow(`master:${ip}`, 5, 10 * 60_000)) {
-      return { step: "master", error: "너무 많이 시도했어요. 10분 뒤에 다시 시도해 주세요." };
-    }
-    if (!checkMasterCode(String(formData.get("code") ?? ""))) {
-      await logEvent({ email: MASTER_USER.email, action: "로그인 실패", path: "/login" });
-      return { step: "master", error: "코드가 맞지 않아요." };
-    }
-    await clearPendingLogin();
-    await createMasterSession();
-    await logEvent({ email: MASTER_USER.email, name: MASTER_USER.name, action: "로그인", path: "/login" });
-  } catch (error) {
-    console.error("[로그인] 마스터코드 확인 실패:", error);
-    return { step: "master", error: "지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요." };
+// 마스터코드 확인 → 맞으면 이메일 없이 로그인하고 true. 틀리면 화면에 아무 표시 없이 false
+// 틀린 시도는 접속한 곳(IP)마다 10분에 5번까지만 확인 (넘으면 맞는 코드도 거절, 서버 메모리 기준 보조 장치)
+async function tryMasterCode(input: string) {
+  if (!input.trim() || input.includes("@")) return false;
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!allow(`master:${ip}`, 5, 10 * 60_000)) return false;
+  if (!checkMasterCode(input)) {
+    await logEvent({ email: MASTER_USER.email, action: "로그인 실패", path: "/login" });
+    return false;
   }
-  redirect("/notices");
+  await clearPendingLogin();
+  await createMasterSession();
+  await logEvent({ email: MASTER_USER.email, name: MASTER_USER.name, action: "로그인", path: "/login" });
+  return true;
 }
 
 // 코드 입력 화면에서 '이메일 다시 입력'
@@ -129,10 +129,6 @@ export async function loginStep(prev: LoginState, formData: FormData): Promise<L
       return requestCode(prev, formData);
     case "verify":
       return verifyCode(prev, formData);
-    case "master":
-      return { step: "master" };
-    case "verify-master":
-      return verifyMaster(formData);
     default:
       return restart();
   }
