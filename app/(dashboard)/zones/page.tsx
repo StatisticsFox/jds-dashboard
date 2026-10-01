@@ -10,6 +10,16 @@ import { countByZone, getZoneData, groupByValue } from "@/lib/zones";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
+// 구역 순위 색 구분
+const WARN_RATIO = 0.35; // 1위의 35% 이하면 경고 (예: 1위 10 → 3 이하)
+type Tier = "green" | "yellow" | "red";
+const tierOf = (value: number, rank: number, top: number): Tier => (value <= top * WARN_RATIO ? "red" : rank <= 3 ? "green" : "yellow");
+const TIER: Record<Tier, { label: string; bar: string; chip: string; edge: string; row?: string }> = {
+  green: { label: "1~3위", bar: "var(--good)", chip: "color-mix(in oklab, var(--good) 16%, var(--surface))", edge: "color-mix(in oklab, var(--good) 50%, var(--surface))" },
+  yellow: { label: "그 외", bar: "var(--cat-4)", chip: "color-mix(in oklab, var(--cat-4) 18%, var(--surface))", edge: "color-mix(in oklab, var(--cat-4) 55%, var(--surface))" },
+  red: { label: "1위의 35% 이하 (경고)", bar: "var(--bad)", chip: "var(--bad)", edge: "var(--bad)", row: "color-mix(in oklab, var(--bad) 14%, var(--surface))" },
+};
+
 export default async function ZonesPage({ searchParams }: PageProps<"/zones">) {
   await requireUser();
   const params = await searchParams;
@@ -141,6 +151,10 @@ function RankCard({
   const groups = groupByValue(shown);
   const max = Math.max(1, ...shown.values());
   const total = [...shown.values()].reduce((s, n) => s + n, 0);
+  // 구분: 1위의 35% 이하 → 빨강(경고, 1~3위여도 빨강이 우선), 1~3위 → 초록, 나머지 → 노랑
+  const top = groups[0]?.value ?? 0;
+  const limit = Math.floor(top * WARN_RATIO);
+  const warned = groups.filter((g) => tierOf(g.value, g.rank, top) === "red").reduce((n, g) => n + g.zones.length, 0);
 
   return (
     <CaptureArea className="card space-y-4 p-5" fileName={fileName.replace(/\s/g, "")} caption={caption}>
@@ -154,31 +168,68 @@ function RankCard({
         )}
       </div>
 
+      {/* 구분 기준 + 경고 구역 수 */}
+      {top > 0 && (
+        <div className="space-y-2">
+          {warned > 0 && (
+            <p className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold text-white" style={{ background: TIER.red.bar }}>
+              <span aria-hidden>⚠️</span> 경고 구역 {warned}곳 · 1위({top})의 35% 이하 = {limit} 이하
+            </p>
+          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+            {(["green", "yellow", "red"] as const).map((t) => (
+              <span key={t} className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: TIER[t].bar }} />
+                {TIER[t].label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ol className="space-y-1 text-sm tabular-nums">
-        {groups.map((g) => (
-          <li key={g.value} className="grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(4rem,8rem)_2.5rem] items-center gap-2 rounded-md px-1 py-1.5 hover:bg-accent-soft/40">
-            <span className="text-center">
-              {g.value > 0 && g.rank <= 3 ? (
-                <span className="text-xl leading-none" role="img" aria-label={`${g.rank}위`}>
-                  {MEDALS[g.rank - 1]}
-                </span>
-              ) : (
-                <span className="text-xs text-muted">{g.value > 0 ? `${g.rank}위` : "–"}</span>
-              )}
-            </span>
-            <span className="flex flex-wrap gap-1">
-              {g.zones.map((z) => (
-                <span key={z} className={`rounded border px-1.5 py-px text-xs font-semibold ${g.value > 0 ? "border-border bg-surface" : "border-transparent text-muted"}`}>
-                  {z}
-                </span>
-              ))}
-            </span>
-            <span className="h-2.5 overflow-hidden rounded-full bg-grid">
-              <span className="block h-full rounded-full bg-accent" style={{ width: `${(g.value / max) * 100}%` }} />
-            </span>
-            <span className={`text-right font-semibold ${g.value ? "" : "text-muted"}`}>{g.value}</span>
-          </li>
-        ))}
+        {groups.map((g) => {
+          const t = top > 0 ? tierOf(g.value, g.rank, top) : null;
+          const red = t === "red";
+          return (
+            <li
+              key={g.value}
+              className={`grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(4rem,8rem)_2.5rem] items-center gap-2 rounded-md py-1.5 pr-1 ${red ? "pl-0.5" : "pl-1 hover:bg-accent-soft/40"}`}
+              style={red ? { background: TIER.red.row, borderLeft: `4px solid ${TIER.red.bar}` } : undefined}
+            >
+              <span className="text-center">
+                {g.value > 0 && g.rank <= 3 ? (
+                  <span className="text-xl leading-none" role="img" aria-label={`${g.rank}위`}>
+                    {MEDALS[g.rank - 1]}
+                  </span>
+                ) : red ? (
+                  <span className="text-base leading-none" role="img" aria-label={g.value > 0 ? `${g.rank}위 경고` : "경고"}>
+                    ⚠️
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted">{g.value > 0 ? `${g.rank}위` : "–"}</span>
+                )}
+              </span>
+              <span className="flex flex-wrap gap-1">
+                {g.zones.map((z) => (
+                  <span
+                    key={z}
+                    className={`rounded border px-1.5 py-px text-xs font-semibold ${red ? "text-white" : ""}`}
+                    style={t ? { background: TIER[t].chip, borderColor: TIER[t].edge } : undefined}
+                  >
+                    {z}
+                  </span>
+                ))}
+              </span>
+              <span className="h-2.5 overflow-hidden rounded-full bg-grid">
+                <span className="block h-full rounded-full" style={{ width: `${(g.value / max) * 100}%`, background: t ? TIER[t].bar : "var(--accent)" }} />
+              </span>
+              <span className={`text-right ${red ? "font-extrabold" : "font-semibold"}`} style={red ? { color: TIER.red.bar } : undefined}>
+                {g.value}
+              </span>
+            </li>
+          );
+        })}
       </ol>
 
       <div className="flex justify-between border-t border-border px-1 pt-2 text-sm text-muted">
