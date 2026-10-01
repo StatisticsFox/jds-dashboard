@@ -13,7 +13,7 @@ type Row = {
 // 주차 × 탈락 사유 히트맵 표. 칸 = 그 주차 탈락 중 이 사유의 비율, 비율이 높을수록 진한 색(한 가지 색)
 // 주차 이름을 누르면 위 순위 막대가 그 주차로 바뀜
 export function ReasonHeatmap({
-  reasons,
+  reasons: allReasons,
   rows,
   rowLabel = "주차",
   rateLabel = "탈락률",
@@ -25,6 +25,8 @@ export function ReasonHeatmap({
   rateLabel?: string;
   unit?: string;
 }) {
+  // 보이는 줄 어디에도 기록이 없는 사유는 열에서 뺌 (표가 쓸데없이 넓어지지 않게)
+  const reasons = allReasons.filter((r) => rows.some((row) => (row.data.reasons.get(r) ?? 0) > 0));
   const share = (d: WeekDrops, r: string) => {
     const dropped = [...d.reasons.values()].reduce((a, b) => a + b, 0);
     return dropped ? (d.reasons.get(r) ?? 0) / dropped : 0;

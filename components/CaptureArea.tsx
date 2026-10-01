@@ -32,6 +32,20 @@ function resolveSvgColors(root: HTMLElement) {
   return () => undo.forEach((f) => f());
 }
 
+// 가로로 스크롤되는 표·그래프가 있으면 캡처하는 동안만 영역을 넓혀서 잘리지 않게 하고, 끝나면 되돌리는 함수를 돌려줌
+function fitWideContent(root: HTMLElement) {
+  let extra = 0;
+  root.querySelectorAll<HTMLElement>(".overflow-x-auto").forEach((el) => {
+    extra = Math.max(extra, el.scrollWidth - el.clientWidth);
+  });
+  if (extra <= 0) return () => {};
+  const before = root.style.width;
+  root.style.width = `${root.offsetWidth + extra}px`;
+  return () => {
+    root.style.width = before;
+  };
+}
+
 type Status = "idle" | "busy" | "copied" | "saved";
 
 // 감싼 영역을 PNG 이미지로 복사하거나 저장하는 버튼을 오른쪽 위에 붙임
@@ -44,6 +58,7 @@ export function CaptureArea({ fileName, caption, className = "", children }: Pro
     const node = ref.current!;
     node.dataset.capturing = "";
     const restore = resolveSvgColors(node);
+    const restoreWidth = fitWideContent(node);
     try {
       const blob = await toBlob(node, {
         pixelRatio: 2,
@@ -54,6 +69,7 @@ export function CaptureArea({ fileName, caption, className = "", children }: Pro
       if (!blob) throw new Error("이미지를 만들지 못했어요.");
       return blob;
     } finally {
+      restoreWidth();
       restore();
       delete node.dataset.capturing;
     }
