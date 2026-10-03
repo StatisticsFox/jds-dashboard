@@ -20,7 +20,7 @@ const jua = Jua({
 });
 
 // 페이지가 그려지기 전에 저장된 테마를 적용해서 깜빡임을 막는 스크립트
-const themeInitScript = `try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}`;
+const themeInitScript = `try{var t=localStorage.getItem("theme");if(["light","dark","warm","cool","green"].indexOf(t)>=0)document.documentElement.dataset.theme=t}catch(e){}`;
 
 export const metadata: Metadata = {
   // 로그인 전에도 보이는 값이라 서비스 이름을 넣지 않음 (대시보드 안에서는 (dashboard)/layout.tsx가 덮어씀)

@@ -2,9 +2,9 @@ import { PendingLink } from "@/components/Pending";
 
 type LinkHref = React.ComponentProps<typeof PendingLink>["href"];
 
-const base = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-sm transition-colors";
-const on = "border-accent bg-accent-soft font-semibold text-accent-strong";
-const off = "border-border bg-surface text-muted hover:border-foreground/25 hover:text-foreground";
+const base = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-sm transition duration-200";
+const on = "active:scale-[0.96] border-accent bg-accent-soft font-semibold text-accent-strong";
+const off = "active:scale-[0.96] border-border bg-surface text-muted hover:-translate-y-px hover:border-foreground/25 hover:text-foreground hover:shadow-sm";
 
 // 사각 선택 칩 (모든 탭 공통)
 // - 하나만 고르는 목록: active만 주면 초록 테두리 + 옅은 초록 배경

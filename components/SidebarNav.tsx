@@ -54,8 +54,8 @@ function Links({ admin, onNavigate }: { admin: boolean; onNavigate?: () => void 
                     href={it.href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={`relative flex items-center rounded-md px-3 py-1.5 text-sm transition-colors ${
-                      active ? "bg-accent-soft font-semibold text-accent-strong" : "text-muted hover:bg-background hover:text-foreground"
+                    className={`relative flex items-center rounded-md px-3 py-1.5 text-sm transition duration-200 active:scale-[0.98] ${
+                      active ? "bg-accent-soft font-semibold text-accent-strong" : "text-muted hover:translate-x-0.5 hover:bg-background hover:text-foreground"
                     }`}
                   >
                     {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-accent" />}
@@ -97,7 +97,7 @@ export function SidebarNav({ admin, brand, footer }: { admin: boolean; brand: Re
         </button>
       </header>
       {open && (
-        <div className="fixed inset-x-0 top-[53px] z-20 max-h-[calc(100dvh-53px)] overflow-y-auto border-b border-border bg-surface px-3 py-4 shadow-lg lg:hidden">
+        <div className="drop-in fixed inset-x-0 top-[53px] z-20 max-h-[calc(100dvh-53px)] overflow-y-auto border-b border-border bg-surface px-3 py-4 shadow-lg lg:hidden">
           <Links admin={admin} onNavigate={() => setOpen(false)} />
           <div className="mt-4 border-t border-border pt-3">{footer}</div>
         </div>

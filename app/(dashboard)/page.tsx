@@ -135,7 +135,7 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
                 <div className="mt-1 h-4 text-xs text-muted">
                   {rate && (
                     <>
-                      {rate.key === "yukDefense" ? "방어율" : "전환"}{" "}
+                      {rate.key === "yukDefense" ? "방어율" : "유월"}{" "}
                       <span className="font-semibold text-foreground">{formatRate(regionRates[rate.key])}</span>
                     </>
                   )}
@@ -146,7 +146,7 @@ export default async function ConversionPage({ searchParams }: PageProps<"/">) {
           })}
         </ol>
         <p className="mt-3 text-xs text-muted">
-          타찾 → 상담 <span className="font-semibold text-foreground">{formatRate(regionRates.tachatToSangdam)}</span> · 전환율의 타찾은 모두
+          타찾 → 상담 <span className="font-semibold text-foreground">{formatRate(regionRates.tachatToSangdam)}</span> · 유월율의 타찾은 모두
           타찾 실질 기준
         </p>
       </CaptureArea>
